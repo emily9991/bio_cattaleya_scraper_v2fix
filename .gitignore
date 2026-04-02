@@ -1,0 +1,9 @@
+node_modules/
+*.pyc
+__pycache__/
+*.log
+dist/
+.DS_Store
+productos_extraidos.csv
+productos_extraidos.json
+*.env

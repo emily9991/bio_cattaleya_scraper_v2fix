@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bio Cattaleya – Panel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f7f6;
+      color: #2d3e2f;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #2e7d32;
+      color: #fff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    header h1 { font-size: 15px; font-weight: 600; }
+
+    .toolbar {
+      padding: 10px 14px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .toolbar input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .toolbar button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      background: #43a047;
+      color: #fff;
+    }
+
+    .toolbar button.danger {
+      background: #ef5350;
+    }
+
+    #product-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #aaa;
+      margin-top: 40px;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .card img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #eee;
+      flex-shrink: 0;
+    }
+
+    .card-body { flex: 1; min-width: 0; }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
+    }
+
+    .card-price {
+      color: #2e7d32;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 11px;
+      color: #666;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-url {
+      font-size: 10px;
+      color: #1976d2;
+      text-decoration: none;
+      word-break: break-all;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .card-date {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    footer {
+      border-top: 1px solid #ddd;
+      padding: 8px 14px;
+      font-size: 10px;
+      color: #aaa;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    #status-bar {
+      padding: 6px 14px;
+      font-size: 11px;
+      color: #555;
+      background: #e8f5e9;
+      border-top: 1px solid #c8e6c9;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌿 Bio Cattaleya – Productos Extraídos</h1>
+  </header>
+
+  <div class="toolbar">
+    <input type="text" id="search-input" placeholder="Buscar por título o URL..." />
+    <button id="btn-export">📥 Exportar JSON</button>
+    <button id="btn-clear" class="danger">🗑</button>
+  </div>
+
+  <div id="product-list">
+    <p class="empty-msg" id="empty-msg">Sin productos. Usa el popup para iniciar el scraping.</p>
+  </div>
+
+  <div id="status-bar">Total: <strong id="total-count">0</strong> producto(s)</div>
+
+  <footer>Bio Cattaleya &copy; 2026</footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const listEl     = document.getElementById("product-list");
+      const emptyMsg   = document.getElementById("empty-msg");
+      const totalEl    = document.getElementById("total-count");
+      const searchInput= document.getElementById("search-input");
+      const btnExport  = document.getElementById("btn-export");
+      const btnClear   = document.getElementById("btn-clear");
+
+      let allProducts = [];
+
+      // ─── Renderizado ───────────────────────────────────────────────────
+
+      function renderProducts(products) {
+        // Eliminar tarjetas previas (no el emptyMsg)
+        Array.from(listEl.querySelectorAll(".card")).forEach((c) => c.remove());
+
+        totalEl.textContent = products.length;
+        emptyMsg.style.display = products.length ? "none" : "block";
+
+        products.forEach((p) => {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const imgSrc = p.imagen || "lib/icons/placeholder.png";
+          card.innerHTML = `
+            <img src="${escHtml(imgSrc)}" alt="Imagen" onerror="this.src='lib/icons/placeholder.png'" />
+            <div class="card-body">
+              <div class="card-title" title="${escHtml(p.titulo || '')}">${escHtml(p.titulo || 'Sin título')}</div>
+              <div class="card-price">${escHtml(p.precio || 'Sin precio')}</div>
+              <div class="card-desc">${escHtml(p.descripcion || '')}</div>
+              <a class="card-url" href="${escHtml(p.url || '#')}" target="_blank" rel="noopener">${escHtml(p.url || '')}</a>
+              <div class="card-date">${escHtml(p.fecha_extraccion ? new Date(p.fecha_extraccion).toLocaleString('es') : '')}</div>
+            </div>
+          `;
+          listEl.appendChild(card);
+        });
+      }
+
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function filterProducts(query) {
+        if (!query) return allProducts;
+        const q = query.toLowerCase();
+        return allProducts.filter(
+          (p) =>
+            (p.titulo  || "").toLowerCase().includes(q) ||
+            (p.url     || "").toLowerCase().includes(q)
+        );
+      }
+
+      // ─── Carga inicial ──────────────────────────────────────────────────
+
+      function loadProducts() {
+        chrome.runtime.sendMessage({ action: "OBTENER_PRODUCTOS" }, (resp) => {
+          if (resp && resp.products) {
+            allProducts = resp.products;
+            renderProducts(filterProducts(searchInput.value));
+          }
+        });
+      }
+
+      loadProducts();
+
+      // ─── Actualización en tiempo real ───────────────────────────────────
+
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.action === "PRODUCTOS_ACTUALIZADOS") {
+          allProducts = message.products;
+          renderProducts(filterProducts(searchInput.value));
+        }
+      });
+
+      // ─── Búsqueda ───────────────────────────────────────────────────────
+
+      searchInput.addEventListener("input", () => {
+        renderProducts(filterProducts(searchInput.value));
+      });
+
+      // ─── Exportar ───────────────────────────────────────────────────────
+
+      btnExport.addEventListener("click", () => {
+        const data = JSON.stringify(allProducts, null, 2);
+        const blob = new Blob([data], { type: "application/json" });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href     = url;
+        a.download = "productos_cattaleya.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // ─── Limpiar ────────────────────────────────────────────────────────
+
+      btnClear.addEventListener("click", () => {
+        if (!confirm("¿Eliminar todos los productos?")) return;
+        chrome.runtime.sendMessage({ action: "LIMPIAR_PRODUCTOS" }, (resp) => {
+          if (resp && resp.ok) {
+            allProducts = [];
+            renderProducts([]);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
