@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bio Cattaleya — Panel lateral</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg-deep:    #0d0015;
+    --bg-panel:   #160024;
+    --bg-card:    #1e0035;
+    --bg-hover:   #2a004d;
+    --accent:     #9b30ff;
+    --accent-2:   #da8fff;
+    --accent-3:   #ff6ef7;
+    --green:      #00e5a0;
+    --yellow:     #ffe566;
+    --red:        #ff5572;
+    --text-main:  #f0e6ff;
+    --text-dim:   #9b7fc0;
+    --text-mono:  #c084fc;
+    --border:     rgba(155, 48, 255, 0.25);
+    --glow:       0 0 20px rgba(155, 48, 255, 0.35);
+    --radius:     10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 100%;
+    min-width: 260px;
+    max-width: 100%;
+    min-height: 100vh;
+    background: var(--bg-deep);
+    color: var(--text-main);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    background: linear-gradient(135deg, #1a0033 0%, #0d0015 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(155,48,255,0.3) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    box-shadow: var(--glow);
+    flex-shrink: 0;
+  }
+  .header-title h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+  .header-title p {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+  .status-dot {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .site-info {
+    background: rgba(155,48,255,0.08);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-mono);
+    display: flex; align-items: center; gap: 6px;
+    overflow: hidden;
+  }
+  .site-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ─── TABS ─── */
+  .tabs {
+    display: flex;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 8px 2px 7px;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .tab .tab-icon { font-size: 14px; }
+  .tab:hover { color: var(--accent-2); background: var(--bg-hover); }
+  .tab.active { color: var(--accent-2); border-bottom-color: var(--accent); background: rgba(155,48,255,0.06); }
+
+  /* ─── BODY ─── */
+  .tab-content { display: none; padding: 12px; }
+  .tab-content.active { display: block; }
+
+  /* ─── SECTION CARDS ─── */
+  .section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .section-card:hover { border-color: rgba(155,48,255,0.5); }
+  
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-icon { font-size: 14px; flex-shrink: 0; }
+  .section-label {
+    flex: 1;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-main);
+  }
+  .section-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge-idle { background: rgba(155,48,255,0.15); color: var(--text-dim); }
+  .badge-running { background: rgba(255,229,102,0.15); color: var(--yellow); animation: pulse 1s infinite; }
+  .badge-done { background: rgba(0,229,160,0.15); color: var(--green); }
+  .badge-error { background: rgba(255,85,114,0.15); color: var(--red); }
+
+  .section-body {
+    display: none;
+    padding: 0 12px 12px;
+    border-top: 1px solid var(--border);
+    animation: slideDown 0.2s ease;
+  }
+  .section-body.open { display: block; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+
+  .section-result {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    min-height: 30px;
+    word-break: break-word;
+  }
+  .section-result.success { color: var(--green); }
+  .section-result.error { color: var(--red); }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #6d00d6);
+    color: white;
+    box-shadow: 0 3px 12px rgba(155,48,255,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(155,48,255,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: rgba(155,48,255,0.1);
+    color: var(--accent-2);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: rgba(155,48,255,0.2); }
+
+  .btn-green {
+    background: linear-gradient(135deg, #00b37d, #006b4a);
+    color: white;
+    box-shadow: 0 3px 12px rgba(0,229,160,0.25);
+  }
+  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(0,229,160,0.4); }
+
+  .btn-danger {
+    background: rgba(255,85,114,0.1);
+    color: var(--red);
+    border: 1px solid rgba(255,85,114,0.2);
+  }
+  .btn-danger:hover { background: rgba(255,85,114,0.2); }
+
+  .btn-row { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-row .btn { margin-top: 0; }
+
+  /* ─── SELECTOR PERSONALIZADO ─── */
+  .campo-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+    margin-top: 5px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .campo-item:hover { border-color: var(--border); }
+  .campo-name { font-weight: 600; color: var(--accent-2); font-size: 11px; min-width: 70px; }
+  .campo-sel { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .campo-del { cursor: pointer; color: var(--red); font-size: 14px; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; }
+  .campo-del:hover { opacity: 1; }
+
+  .input-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .input-field {
+    flex: 1;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 9px;
+    color: var(--text-main);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--text-dim); }
+
+  select.input-field {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239b7fc0'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+  }
+
+  /* ─── PREVIEW ─── */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .preview-item {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px;
+  }
+  .preview-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .preview-value { font-size: 12px; color: var(--text-main); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preview-value.mono { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent-2); }
+
+  .img-preview { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .img-thumb {
+    width: 48px; height: 48px;
+    border-radius: 5px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .img-thumb:hover { transform: scale(1.1); }
+
+  /* ─── LISTADO ─── */
+  .listing-table-wrap {
+    margin-top: 8px;
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(0,0,0,0.15);
+  }
+  .listing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  .listing-table th,
+  .listing-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .listing-table th {
+    background: var(--bg-card);
+    color: var(--accent-2);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .listing-table tr:hover td { background: rgba(155,48,255,0.06); }
+  .listing-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .listing-table a { color: var(--accent-2); word-break: break-all; font-size: 9px; }
+
+  /* ─── DATA SETUP (revisión pre-exportación) ─── */
+  .data-setup-scroll-wrap {
+    display: none;
+    max-height: min(420px, 62vh);
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(0, 0, 0, 0.22);
+    margin-top: 10px;
+  }
+  .data-setup-scroll-wrap.visible { display: block; }
+  .data-setup-table {
+    min-width: 680px;
+    width: max-content;
+    max-width: none;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  .data-setup-table th,
+  .data-setup-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .data-setup-table th {
+    background: linear-gradient(180deg, var(--bg-card) 0%, #1a0a28 100%);
+    color: var(--accent-2);
+    font-weight: 600;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  .data-setup-table tr:hover td { background: rgba(155, 48, 255, 0.07); }
+  .data-setup-table .col-url {
+    max-width: 220px;
+    word-break: break-all;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--text-mono);
+  }
+  .data-setup-table .col-nombre { max-width: 200px; }
+  .data-setup-single-card {
+    font-size: 11px;
+    line-height: 1.55;
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: none;
+  }
+  .data-setup-single-card.visible { display: block; }
+  .data-setup-single-card dt {
+    color: var(--text-dim);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 6px;
+  }
+  .data-setup-single-card dt:first-child { margin-top: 0; }
+  .data-setup-single-card dd {
+    color: var(--text-main);
+    margin: 0;
+    word-break: break-word;
+  }
+
+  /* ─── EXPORT TAB ─── */
+  .export-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .export-option:hover { border-color: rgba(155,48,255,0.5); background: var(--bg-hover); }
+  .export-icon { font-size: 20px; }
+  .export-info { flex: 1; }
+  .export-title { font-size: 12px; font-weight: 600; color: var(--text-main); }
+  .export-desc { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .export-arrow { color: var(--text-dim); font-size: 16px; }
+
+  .python-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(0,229,160,0.05);
+    border: 1px solid rgba(0,229,160,0.15);
+    border-radius: 7px;
+    margin-bottom: 10px;
+    font-size: 11px;
+  }
+  .python-status.offline { background: rgba(255,85,114,0.05); border-color: rgba(255,85,114,0.15); }
+  .python-status .dot-py { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .python-status.offline .dot-py { background: var(--red); }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-deep);
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 0;
+  }
+
+  /* Selector en espera */
+  .selector-waiting {
+    background: rgba(255,110,247,0.1);
+    border: 1px solid rgba(255,110,247,0.3);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--accent-3);
+    animation: pulse 1.5s infinite;
+    display: none;
+  }
+  .selector-waiting.visible { display: block; }
+
+  .tag { font-family: 'Space Mono', monospace; font-size: 9px; padding: 1px 5px; border-radius: 3px; background: rgba(155,48,255,0.15); color: var(--text-mono); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(155,48,255,0.3); border-radius: 4px; }
+
+  /* ─── OCR PROGRESS ─── */
+  .ocr-log {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--text-mono);
+    max-height: 80px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+  .ocr-log .log-line { display: block; }
+  .section-card.ocr-card { border-color: rgba(255,110,247,0.3); }
+  .section-card.ocr-card .section-header { background: rgba(255,110,247,0.05); }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">🌺</div>
+    <div class="header-title">
+      <h1>BIO CATTALEYA SCRAPER PRO</h1>
+      <p>Extractor visual · v3.3</p>
+    </div>
+    <div class="status-dot">
+      <div class="dot"></div>
+      <span id="statusText">Listo</span>
+    </div>
+  </div>
+  <div class="site-info">
+    <span>🌐</span>
+    <span id="siteUrl">cargando...</span>
+  </div>
+</div>
+
+<!-- ─── TABS ─── -->
+<div class="tabs">
+  <div class="tab active" data-tab="extract">
+    <span class="tab-icon">⚡</span>
+    <span>Extractor</span>
+  </div>
+  <div class="tab" data-tab="selector">
+    <span class="tab-icon">🎯</span>
+    <span>Selector</span>
+  </div>
+  <div class="tab" data-tab="listing">
+    <span class="tab-icon">📑</span>
+    <span>Listado</span>
+  </div>
+  <div class="tab" data-tab="preview">
+    <span class="tab-icon">👁</span>
+    <span>Preview</span>
+  </div>
+  <div class="tab" data-tab="datasetup">
+    <span class="tab-icon">🗂</span>
+    <span>Datos</span>
+  </div>
+  <div class="tab" data-tab="export">
+    <span class="tab-icon">📤</span>
+    <span>Exportar</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TAB 1: EXTRACTOR                        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content active" id="tab-extract">
+
+  <!-- Paso 0: OCR Descripción (PRIMER BOTÓN) -->
+  <div class="section-card ocr-card">
+    <div class="section-header" id="hdrOCR">
+      <span class="section-icon">🔍</span>
+      <span class="section-label">0 · Leer Descripción (OCR)</span>
+      <span class="section-badge badge-idle" id="badgeOCR">LISTO</span>
+    </div>
+    <div class="section-body" id="bodyOCR">
+      <div class="section-result" id="resultOCR">
+        Lee el texto de las imágenes de descripción del producto,<br>
+        lo traduce al inglés y lo guarda en Descripción.<br>
+        <span style="color:var(--yellow);font-size:10px">⏱ Puede tomar hasta 6 minutos</span>
+      </div>
+      <div class="ocr-log" id="ocrLog" style="display:none"></div>
+      <button class="btn btn-primary" id="btnOCR" style="background:linear-gradient(135deg,#6d00d6,#ff6ef7)">
+        🔍 Iniciar Lectura OCR
+      </button>
+    </div>
+  </div>
+
+  <!-- Paso 1: Scroll -->
+  <div class="section-card">
+    <div class="section-header" id="hdr1">
+      <span class="section-icon">📜</span>
+      <span class="section-label">1 · Cargar página (Scroll)</span>
+      <span class="section-badge badge-idle" id="badge1">LISTO</span>
+    </div>
+    <div class="section-body" id="body1">
+      <div class="section-result" id="result1">Activa para hacer scroll y cargar imágenes lazy-load.</div>
+      <button class="btn btn-primary" id="btnScroll">▶ Ejecutar Scroll</button>
+    </div>
+  </div>
+
+  <!-- Paso 2: Datos básicos -->
+  <div class="section-card">
+    <div class="section-header" id="hdr2">
+      <span class="section-icon">📦</span>
+      <span class="section-label">2 · Datos del Producto</span>
+      <span class="section-badge badge-idle" id="badge2">LISTO</span>
+    </div>
+    <div class="section-body" id="body2">
+      <div class="section-result" id="result2">Extrae nombre, precio, tienda, calificaciones y specs.</div>
+      <button class="btn btn-primary" id="btnBasicData">▶ Extraer Datos</button>
+    </div>
+  </div>
+
+  <!-- Paso 3: Media -->
+  <div class="section-card">
+    <div class="section-header" id="hdr3">
+      <span class="section-icon">📸</span>
+      <span class="section-label">3 · Imágenes y Video</span>
+      <span class="section-badge badge-idle" id="badge3">LISTO</span>
+    </div>
+    <div class="section-body" id="body3">
+      <div class="section-result" id="result3">Captura imágenes HD y video del producto.</div>
+      <button class="btn btn-primary" id="btnMedia">▶ Capturar Media</button>
+    </div>
+  </div>
+
+  <!-- Paso 4: Paginación -->
+  <div class="section-card">
+    <div class="section-header" id="hdr4">
+      <span class="section-icon">📄</span>
+      <span class="section-label">4 · Detectar Paginación</span>
+      <span class="section-badge badge-idle" id="badge4">LISTO</span>
+    </div>
+    <div class="section-body" id="body4">
+      <div class="section-result" id="result4">Detecta si hay botón "Siguiente página".</div>
+      <button class="btn btn-primary" id="btnPagination">▶ Detectar</button>
+    </div>
+  </div>
+
+  <button class="btn btn-secondary" id="btnResetData">🔄 Reiniciar todos los datos</button>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TAB 2: SELECTOR VISUAL                 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-selector">
+
+  <div class="selector-waiting" id="selectorWaiting">
+    🎯 Haz clic en cualquier elemento de la página…
+    <br><small>ESC para cancelar</small>
+  </div>
+
+  <div class="input-row">
+    <input class="input-field" type="text" id="campoNombre" placeholder="Nombre del campo (ej: precio_oferta)" />
+    <select class="input-field" id="campoTipo" style="width:100px;flex:0 0 100px">
+      <option value="texto">Texto</option>
+      <option value="lista">Lista</option>
+      <option value="imagen">Imagen</option>
+      <option value="enlace">Enlace</option>
+      <option value="numero">Número</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" id="btnActivarSelector" style="margin-top:8px">
+    🎯 Seleccionar elemento en la página
+  </button>
+  <p style="font-size:10px;color:var(--text-dim);margin-top:8px;line-height:1.45">
+    Este panel lateral de Chrome permanece abierto al hacer clic en la página (como otras extensiones).
+  </p>
+
+  <div class="divider"></div>
+
+  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600;">
+    CAMPOS DEFINIDOS <span id="camposCount" class="tag">0</span>
+  </div>
+  <div id="camposList"></div>
+
+  <div class="divider"></div>
+
+  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600;">SELECTOR MANUAL</div>
+  <div class="input-row">
+    <input class="input-field" type="text" id="manualNombre" placeholder="Nombre" />
+    <input class="input-field" type="text" id="manualSelector" placeholder="CSS selector" />
+  </div>
+  <button class="btn btn-secondary" id="btnManualAdd" style="margin-top:6px">+ Agregar Manual</button>
+
+  <div class="divider"></div>
+  <button class="btn btn-primary" id="btnExtractSchema">⚡ Extraer con mis Campos</button>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TAB: LISTADO (búsqueda / rejilla)      -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-listing">
+
+  <div class="section-result" id="listingDetectResult">
+    En páginas de búsqueda o tienda con muchos productos: detecta, opcionalmente haz scroll para cargar más, y escanea.
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" id="btnDetectListing" style="margin-top:8px;flex:1">🔎 Detectar</button>
+    <button class="btn btn-secondary" id="btnScrollListing" style="margin-top:8px;flex:1">📜 Scroll</button>
+  </div>
+  <button class="btn btn-primary" id="btnScanListing">📑 Escanear productos del listado</button>
+
+  <div style="font-size:10px;color:var(--text-dim);margin-top:8px;line-height:1.45">
+    Columnas: nombre · precio · compradores (si figura) · URL · imagen principal.
+  </div>
+
+  <div class="listing-table-wrap" id="listingTableWrap" style="display:none">
+    <table class="listing-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Img</th>
+          <th>Nombre</th>
+          <th>¥</th>
+          <th>Compradores</th>
+          <th>URL</th>
+        </tr>
+      </thead>
+      <tbody id="listingTableBody"></tbody>
+    </table>
+  </div>
+
+  <button class="btn btn-green" id="btnExportListingCSV" style="margin-top:10px;display:none">📊 Exportar listado CSV</button>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TAB 3: PREVIEW                         -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-preview">
+  <button class="btn btn-secondary" id="btnRefreshPreview">↻ Actualizar Preview</button>
+
+  <div class="preview-grid" id="previewGrid" style="margin-top:10px">
+    <div class="preview-item">
+      <div class="preview-label">Nombre</div>
+      <div class="preview-value" id="pvNombre">—</div>
+    </div>
+    <div class="preview-item">
+      <div class="preview-label">Precio</div>
+      <div class="preview-value mono" id="pvPrecio">—</div>
+    </div>
+    <div class="preview-item">
+      <div class="preview-label">Tienda</div>
+      <div class="preview-value" id="pvTienda">—</div>
+    </div>
+    <div class="preview-item">
+      <div class="preview-label">Calificación</div>
+      <div class="preview-value" id="pvRating">—</div>
+    </div>
+    <div class="preview-item" style="grid-column:1/-1">
+      <div class="preview-label">Especificaciones</div>
+      <div class="preview-value" id="pvSpecs" style="white-space:normal;font-size:10px;line-height:1.5">—</div>
+    </div>
+    <div class="preview-item" style="grid-column:1/-1">
+      <div class="preview-label">Campos Custom</div>
+      <div class="preview-value" id="pvCustom" style="white-space:normal;font-size:10px;line-height:1.5">—</div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;color:var(--text-dim);margin:10px 0 5px;font-weight:600;">
+    IMÁGENES <span id="imgCount" class="tag">0</span>
+  </div>
+  <div class="img-preview" id="imgPreview"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TAB: DATA SETUP — revisión pre-export  -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-datasetup">
+
+  <div style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:8px">
+    <strong style="color:var(--accent-2)">Revisión de datos</strong> — Tabla con scroll horizontal y vertical. Confirma el contenido antes de ir a <b>Exportar</b>.
+  </div>
+
+  <button class="btn btn-secondary" id="btnDataSetupRefresh">↻ Sincronizar con la página</button>
+
+  <div class="section-result success" id="dataSetupSummary" style="margin-top:8px;font-size:10px">
+    Pulsa sincronizar para cargar listado y ficha.
+  </div>
+
+  <dl class="data-setup-single-card" id="dataSetupSingleCard">
+    <dt>Producto actual (ficha)</dt>
+    <dd id="dataSetupSingleNombre">—</dd>
+    <dt>Precio</dt>
+    <dd id="dataSetupSinglePrecio">—</dd>
+    <dt>Tienda</dt>
+    <dd id="dataSetupSingleTienda">—</dd>
+    <dt>URL</dt>
+    <dd id="dataSetupSingleUrl" style="font-size:10px;font-family:monospace">—</dd>
+    <dt>Imágenes / Video</dt>
+    <dd id="dataSetupSingleMedia">—</dd>
+  </dl>
+
+  <div class="data-setup-scroll-wrap" id="dataSetupScrollWrap">
+    <table class="data-setup-table" id="dataSetupTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Imagen</th>
+          <th class="col-nombre">Nombre</th>
+          <th>Precio</th>
+          <th>Compradores</th>
+          <th class="col-url">URL del producto</th>
+        </tr>
+      </thead>
+      <tbody id="dataSetupTableBody"></tbody>
+    </table>
+  </div>
+
+  <p id="dataSetupEmpty" style="font-size:11px;color:var(--text-dim);text-align:center;padding:14px 8px;line-height:1.5">
+    No hay filas de listado. En la pestaña <b>Listado</b> pulsa «Escanear productos», o extrae una ficha en <b>Extractor</b>.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TAB 4: EXPORTAR                        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-export">
+
+  <div class="python-status" id="pythonStatus">
+    <div class="dot-py"></div>
+    <div>
+      <div style="font-weight:600;font-size:11px;color:var(--green)">Receptor Python</div>
+      <div style="font-size:10px;color:var(--text-dim)">Verificando conexión...</div>
+    </div>
+    <button class="btn btn-secondary" id="btnCheckPython" style="width:auto;margin-top:0;padding:4px 10px;font-size:10px;">↻</button>
+  </div>
+
+  <div class="export-option" id="btnExportJSON">
+    <span class="export-icon">📋</span>
+    <div class="export-info">
+      <div class="export-title">Exportar JSON</div>
+      <div class="export-desc">Todos los datos en formato JSON estructurado</div>
+    </div>
+    <span class="export-arrow">›</span>
+  </div>
+
+  <div class="export-option" id="btnExportCSV">
+    <span class="export-icon">📊</span>
+    <div class="export-info">
+      <div class="export-title">Exportar CSV</div>
+      <div class="export-desc">Compatible con Excel, Google Sheets</div>
+    </div>
+    <span class="export-arrow">›</span>
+  </div>
+
+  <div class="export-option" id="btnSendPython">
+    <span class="export-icon">🐍</span>
+    <div class="export-info">
+      <div class="export-title">Enviar a Python → Excel</div>
+      <div class="export-desc">Guarda en Maestro_BioCattaleya.xlsx + descarga media</div>
+    </div>
+    <span class="export-arrow">›</span>
+  </div>
+
+  <div class="export-option" id="btnExportAll">
+    <span class="export-icon">📦</span>
+    <div class="export-info">
+      <div class="export-title">Exportar Todo (JSON + CSV)</div>
+      <div class="export-desc">Descarga ambos archivos simultáneamente</div>
+    </div>
+    <span class="export-arrow">›</span>
+  </div>
+
+  <div id="exportStatus" class="section-result" style="margin-top:8px;display:none"></div>
+</div>
+
+<!-- ─── FOOTER ─── -->
+<div class="footer">
+  <button class="btn btn-green" id="btnExportMain">
+    ⚡ EXTRAER TODO Y EXPORTAR
+  </button>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

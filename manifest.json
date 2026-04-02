@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "114",
+  "name": "Bio Cattaleya Scraper Pro",
+  "version": "4.0",
+  "description": "Extractor visual de productos profesional – Taobao, Tmall y cualquier sitio web",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "downloads",
+    "tabs",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*",
+    "http://localhost:5000/*",
+    "<all_urls>"
+  ],
+  "action": {},
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["tesseract.min.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["tesseract.min.js", "lib/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
