@@ -1,43 +1,81 @@
+# ===========================
+# Node.js
+# ===========================
 node_modules/
 dist/
-.env
 *.log
-.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================
+# Python
+# ===========================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/
 
-# Data directories - ignore content, keep structure
+# ===========================
+# Entornos virtuales
+# ===========================
+venv/
+env/
+.venv/
+
+# ===========================
+# Variables de entorno y credenciales
+# ===========================
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.production
+server/.env.local
+debug_server/.env
+!**/.env.example
+!**/.env.production.example
+*.pem
+*.key
+*.p12
+secrets.json
+credentials.json
+
+# ===========================
+# Datos del scraper
+# ===========================
 data/raw/*
 data/processed/*
 data/exports/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/exports/.gitkeep
+*.csv
+*.xlsx
+*.sqlite
+*.db
 
-# Environment files
-server/.env
-server/.env.production
-debug_server/.env
+# ===========================
+# Sistema operativo
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
 
-# Virtual environments
-venv/
-env/
-.venv/
-
-# Coverage reports
-htmlcov/
-.coverage
-coverage.xml
-
-# Build artifacts
-build/
-*.egg-info/
-
-# IDE files
-.vscode/
+# ===========================
+# IDE
+# ===========================
+.vscode/settings.json
 .idea/
 *.swp
 *.swo
-
-# OS files
-Thumbs.db
