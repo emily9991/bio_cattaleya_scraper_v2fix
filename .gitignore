@@ -2,5 +2,42 @@ node_modules/
 dist/
 .env
 *.log
+.DS_Store
 __pycache__/
 *.pyc
+
+# Data directories - ignore content, keep structure
+data/raw/*
+data/processed/*
+data/exports/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/exports/.gitkeep
+
+# Environment files
+server/.env
+server/.env.production
+debug_server/.env
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Build artifacts
+build/
+*.egg-info/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
