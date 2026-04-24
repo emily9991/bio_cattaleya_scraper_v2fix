@@ -1,0 +1,5 @@
+node_modules/
+src/config.js
+server/.env
+__pycache__/
+*.pyc

@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "114",
+  "name": "Bio Cattaleya Scraper Pro",
+  "version": "4.0",
+  "description": "Extractor visual de productos profesional - Taobao, Tmall y cualquier sitio web",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "downloads",
+    "tabs",
+    "sidePanel",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://*.taobao.com/*",
+    "*://*.tmall.com/*",
+    "*://*.1688.com/*",
+    "*://*.world.tmall.com/*",
+    "https://api.notion.com/*",
+    "https://localhost:3000/*",
+    "http://127.0.0.1:5000/*",
+    "http://localhost:5001/*",
+    "http://127.0.0.1:5001/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://api.notion.com https://localhost:3000 http://127.0.0.1:5000 http://localhost:5001 http://127.0.0.1:5001;"
+  },
+  "action": {},
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.taobao.com/*",
+        "*://*.tmall.com/*",
+        "*://*.1688.com/*",
+        "*://*.world.tmall.com/*"
+      ],
+      "js": ["config.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["tesseract.min.js", "lib/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

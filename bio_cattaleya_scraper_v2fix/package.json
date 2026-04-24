@@ -1,0 +1,27 @@
+{
+  "name": "bio_cattaleya_scraper_v2fix",
+  "version": "1.0.0",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:dev": "webpack --mode development",
+    "build:prod": "webpack --mode production"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "babel-loader": "^10.1.1",
+    "copy-webpack-plugin": "^14.0.0",
+    "dotenv-webpack": "^9.0.0",
+    "javascript-obfuscator": "^5.4.1",
+    "terser-webpack-plugin": "^5.4.0",
+    "tesseract.js": "^5.1.0",
+    "webpack": "^5.106.2",
+    "webpack-cli": "^7.0.2",
+    "webpack-obfuscator": "^3.6.1"
+  }
+}
