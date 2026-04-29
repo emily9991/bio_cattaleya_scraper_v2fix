@@ -245,4 +245,7 @@ function traducirClaves(claves, callback) {
       });
   } catch (e) {
     console.error('[BSC] traducirClaves error:', e);
-    var mapa = {};
+    var mapa = {};    claves.forEach(function(c) { mapa[c] = c; });
+    callback(mapa);
+  }
+}
