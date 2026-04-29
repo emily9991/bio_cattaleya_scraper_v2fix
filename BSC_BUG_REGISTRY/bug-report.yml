@@ -1,0 +1,95 @@
+name: 🐛 Bug Report
+description: Reportar un bug en Bio Cattaleya Scraper Pro
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar un bug. Completa todos los campos para agilizar el diagnóstico.
+
+  - type: dropdown
+    id: site
+    attributes:
+      label: Sitio afectado
+      options:
+        - Taobao
+        - Tmall (tienda)
+        - Tmall (búsqueda)
+        - 1688
+        - Otro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Componente
+      options:
+        - content.js (scraping)
+        - background.js (IPC / service worker)
+        - popup.js / sidepanel (UI)
+        - server (Express)
+        - webpack / build
+        - Otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Síntoma
+      description: ¿Qué ocurre? ¿Qué mensaje de error aparece?
+      placeholder: "Ej: El badge nunca muestra 30. En consola aparece: [BSC] classic_result {total: 0}"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Abrir keiko.world.tmall.com
+        2. Abrir sidepanel
+        3. Esperar 5 segundos
+        4. Ver que badge muestra 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+      placeholder: "Badge debería mostrar 30 y listingItems debería tener 30 productos"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes (consola / service worker)
+      render: text
+      description: Pega aquí los logs de DevTools. Omitir tokens y datos sensibles.
+
+  - type: input
+    id: version
+    attributes:
+      label: Versión de la extensión
+      placeholder: "v4.5"
+    validations:
+      required: true
+
+  - type: input
+    id: chrome
+    attributes:
+      label: Versión de Chrome
+      placeholder: "124.0.6367.82"
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Versión de Node.js
+      placeholder: "v22.17.0"

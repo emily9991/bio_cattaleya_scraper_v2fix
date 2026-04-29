@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Build + Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: bio_cattaleya_scraper_v2fix/package-lock.json
+
+      - name: Install dependencies
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: npm ci
+
+      - name: Build production
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: npm run build:prod
+
+      - name: Package extension (.zip)
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          ZIP_NAME="bio_cattaleya_scraper_v${VERSION}.zip"
+          # Include only files needed by Chrome
+          zip -r "../${ZIP_NAME}" \
+            manifest.json \
+            content.js \
+            background.js \
+            config.js \
+            sidepanel.html \
+            popup.html \
+            tesseract.min.js \
+            dist/background.js \
+            dist/popup.js \
+            dist/manifest.json \
+            dist/popup.html \
+            dist/sidepanel.html \
+            dist/config.js \
+            dist/lib/ \
+            -x "*.map" \
+            -x "node_modules/*" \
+            -x "src/*"
+          echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Bio Cattaleya Scraper Pro v${{ env.VERSION }}"
+          body_path: CHANGELOG.md
+          files: "${{ env.ZIP_NAME }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

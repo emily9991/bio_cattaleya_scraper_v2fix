@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-build:
+    name: Lint + Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: bio_cattaleya_scraper_v2fix/package-lock.json
+
+      - name: Install extension dependencies
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: npm ci
+
+      - name: Install server dependencies
+        working-directory: bio_cattaleya_scraper_v2fix/server
+        run: npm ci
+
+      - name: Lint (ESLint)
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: npm run lint --if-present
+
+      - name: Build (production)
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: npm run build:prod
+
+      - name: Verify dist artifacts
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: |
+          echo "Checking dist files..."
+          ls -lh dist/
+          test -f dist/background.js || (echo "❌ dist/background.js missing" && exit 1)
+          test -f dist/popup.js      || (echo "❌ dist/popup.js missing" && exit 1)
+          test -f dist/manifest.json || (echo "❌ dist/manifest.json missing" && exit 1)
+          echo "✅ All dist artifacts present"
+
+      - name: Check content.js is NOT compiled by Webpack
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: |
+          # content.js raíz debe existir y NO tener wrappers de Webpack
+          test -f content.js || (echo "❌ content.js (root) missing" && exit 1)
+          if grep -q "webpackBootstrap\|sourceMappingURL=data:" content.js; then
+            echo "❌ content.js contains Webpack artifacts — should be clean"
+            exit 1
+          fi
+          echo "✅ content.js is clean (no Webpack wrappers)"
+
+      - name: Check no secrets in tracked files
+        run: |
+          if grep -r "secret_\|NOTION_TOKEN=secret\|JWT_SECRET=" --include="*.js" --include="*.json" \
+             --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "❌ Possible secret found in tracked files"
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+
+  validate-manifest:
+    name: Validate Manifest
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate manifest.json structure
+        working-directory: bio_cattaleya_scraper_v2fix
+        run: |
+          node -e "
+            const m = require('./manifest.json');
+            const required = ['manifest_version','name','version','permissions'];
+            required.forEach(k => {
+              if (!m[k]) { console.error('Missing:', k); process.exit(1); }
+            });
+            if (m.manifest_version !== 3) {
+              console.error('Expected MV3, got:', m.manifest_version);
+              process.exit(1);
+            }
+            console.log('✅ manifest.json valid — MV3, version:', m.version);
+          "
