@@ -14,5 +14,10 @@
   },
   "dependencies": {
     "exceljs": "^4.4.0"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^9.0.0"
+    }
   }
 }
