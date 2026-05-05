@@ -531,11 +531,13 @@ async function enviarMensaje(tabId, mensaje) {
 // FIX: Repara mojibake (chino UTF-8 leído como Latin-1)
 // Síntoma: å­¦é™¢é£Ž → 学院风
 function sanitizarTextoChino(str) {
-  if (!str) return str;
+  if (!str || typeof str !== 'string') return str || '';
   try {
-    // Detecta patrón mojibake: byte lead UTF-8 (0xC0-0xDF) seguido de continuation byte (0x80-0xBF)
-    if (/[\xC0-\xDF][\x80-\xBF]/.test(str)) {
-      var bytes = new Uint8Array(str.split('').map(function(c) { return c.charCodeAt(0) & 0xFF; }));
+    // Detectar mojibake de 2 bytes (Latin/símbolos) Y 3 bytes (chino CJK)
+    if (/[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF][\x80-\xBF]/.test(str)) {
+      var bytes = new Uint8Array(str.split('').map(function(c) {
+        return c.charCodeAt(0) & 0xFF;
+      }));
       return new TextDecoder('utf-8').decode(bytes);
     }
   } catch(e) {}
