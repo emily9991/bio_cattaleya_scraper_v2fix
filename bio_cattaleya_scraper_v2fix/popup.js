@@ -527,6 +527,21 @@ async function enviarMensaje(tabId, mensaje) {
   });
 }
 
+// ─── SANITIZACIÓN UTF-8 ──────────────────────────────────────
+// FIX: Repara mojibake (chino UTF-8 leído como Latin-1)
+// Síntoma: å­¦é™¢é£Ž → 学院风
+function sanitizarTextoChino(str) {
+  if (!str) return str;
+  try {
+    // Detecta patrón mojibake: byte lead UTF-8 (0xC0-0xDF) seguido de continuation byte (0x80-0xBF)
+    if (/[\xC0-\xDF][\x80-\xBF]/.test(str)) {
+      var bytes = new Uint8Array(str.split('').map(function(c) { return c.charCodeAt(0) & 0xFF; }));
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+  } catch(e) {}
+  return str;
+}
+
 function exportarListadoCSV() {
   const rows = ultimoListado.length ? ultimoListado : [];
   if (rows.length === 0) {
@@ -540,7 +555,14 @@ function exportarListadoCSV() {
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const SEP = ';';
   const header = ['Nombre', 'Precio (CNY)', 'Compradores', 'URL', 'Imagen'].map(h => '"' + h + '"').join(SEP);
-  const lines = rows.map((r) => [r.nombre, r.precio, r.compradores, r.url, r.imagen].map(esc).join(SEP));
+  // FIX #1: sanitizar nombre antes de escapar para CSV
+  const lines = rows.map((r) => [
+    sanitizarTextoChino(r.nombre || ''),
+    r.precio,
+    r.compradores,
+    r.url,
+    r.imagen
+  ].map(esc).join(SEP));
   const csv = 'sep=' + SEP + '\n' + header + '\n' + lines.join('\n');
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   descargarArchivo('BioCattaleya_listado_' + ts + '.csv', csv);
@@ -622,7 +644,6 @@ async function refrescarPreview(tabId) {
 const esperar = ms => new Promise(r => setTimeout(r, ms));
 
 function construirVariaciones(dimensiones) {
-  // Formato: "颜色分类: 湛蓝|粉色|灰色|杏色 || 尺码: S|M|L|XL"
   return dimensiones.map(function(dim) {
     var valores = dim.valores.map(function(v) { return v.nombre; }).join('|');
     return dim.nombre + ': ' + valores;
@@ -630,7 +651,6 @@ function construirVariaciones(dimensiones) {
 }
 
 function construirImagenesColor(imagenesPorColor) {
-  // Formato: "湛蓝::https://... | 粉色::https://..."
   return Object.entries(imagenesPorColor).map(function([color, url]) {
     return color + '::' + url;
   }).join(' | ').slice(0, 8000);
@@ -644,9 +664,11 @@ function exportarCSVListado(items) {
     return;
   }
   var headers = ['Title', 'URL', 'Image', 'Price', 'Source'];
+  // FIX #3: sanitizar título en función legacy exportarCSVListado
   var filas = items.map(function(item) {
+    var titulo = sanitizarTextoChino(item.nombre || item.title || '');
     return [
-      '"' + (item.nombre || item.title || '').replace(/"/g, '""') + '"',
+      '"' + titulo.replace(/"/g, '""') + '"',
       '"' + (item.url || '') + '"',
       '"' + (item.imagen || item.image || '') + '"',
       '"' + (item.precio || '') + '"',
@@ -662,27 +684,25 @@ function construirFila(datos) {
   const precioCNY = parseFloat(datos.precio) || 0;
   const precioUSD = precioCNY > 0 ? (precioCNY / 7.25).toFixed(2) : '';
   const precioVenta = precioCNY > 0 ? (precioCNY / 7.25 * 2.5).toFixed(2) : '';
-  const nombreZH = datos.nombre || '';
+  // FIX #2: sanitizar nombre del producto en ficha individual
+  const nombreZH = sanitizarTextoChino(datos.nombre || '');
   const tieneChino = /[\u4e00-\u9fff]/.test(nombreZH);
   const nombreEN = tieneChino ? '(traducir)' : nombreZH;
   const imgs = datos.imagenes || [];
   var specParts = [];
 
-  // CUSTOM_* keys
   Object.keys(datos).forEach(function(key) {
     if (key.startsWith('CUSTOM_')) {
       specParts.push(key.replace('CUSTOM_', '') + ': ' + datos[key]);
     }
   });
 
-  // Mejora #2: parámetros traducidos
   if (datos.parametros && typeof datos.parametros === 'object') {
     Object.entries(datos.parametros).forEach(function([k, v]) {
       if (k && v) specParts.push(k + ': ' + v);
     });
   }
 
-  // Enhanced parameter handling with translated keys
   let paramStr = '';
   if (datos.parametros_texto) {
     paramStr = datos.parametros_texto.slice(0, 8000);
@@ -699,7 +719,7 @@ function construirFila(datos) {
       .join(' | ')
       .slice(0, 8000);
   }
-  
+
   const customStr = Object.entries(datos.datos_custom || {}).map(([k,v]) => k + ': ' + (Array.isArray(v) ? v.join(', ') : String(v||''))).join(' | ');
   const productSpecs = specParts.length > 0
     ? specParts.join(' | ').slice(0, 8000)
@@ -740,12 +760,13 @@ function construirFila(datos) {
   };
   return fila;
 }
+
 async function exportarJSON(tabId) {
   const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
   if (!datos) return;
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const nombre = 'BioCattaleya_' + (datos.sitio || 'producto') + '_' + ts + '.json';
-  descargarArchivo(JSON.stringify(datos, null, 2), nombre, 'application/json');
+  descargarArchivo(nombre, JSON.stringify(datos, null, 2));
   mostrarExportStatus('✅ JSON descargado: ' + nombre, 'success');
 }
 
@@ -837,15 +858,8 @@ async function accionCompleta(tabId) {
   }, 5000);
 }
 
-function descargarArchivo(filename, csvString) {
-  // UTF-16 LE — único encoding que Excel Windows abre correctamente sin configurar
-  var buf = new ArrayBuffer(2 + csvString.length * 2);
-  var view = new DataView(buf);
-  view.setUint16(0, 0xFEFF, true); // BOM UTF-16 LE
-  for (var i = 0; i < csvString.length; i++) {
-    view.setUint16(2 + i * 2, csvString.charCodeAt(i), true);
-  }
-  var blob = new Blob([buf], { type: 'text/csv;charset=utf-16le' });
+function descargarArchivo(filename, content) {
+  var blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
@@ -885,75 +899,58 @@ async function checkPython() {
   }
 }
 
-// ─── MEJORA #5: PRODUCTOS_BSC CARPETAS JERÁRQUICAS ────────────────────────────────
+// ─── MEJORA #5: PRODUCTOS_BSC CARPETAS JERÁRQUICAS ──────────────────────────
 
-// Función getSlug() según especificación
 function getSlug(hostname) {
   return hostname
     .replace(/\.(com|cn|net|org)(\.cn)?$/, '')
     .replace(/\./g, '-');
 }
 
-// Event listener para botón Guardar listado
 document.getElementById('btnGuardarListado').addEventListener('click', async () => {
   const btn = document.getElementById('btnGuardarListado');
   const statusEl = document.getElementById('exportStatus');
   const excelBtn = document.getElementById('btnExportExcel');
-  
+
   try {
-    // Obtener datos actuales del listado o ficha
     const listado = await obtenerListadoActual();
-    
+
     if (!listado || listado.length === 0) {
       statusEl.textContent = '❌ No hay datos para guardar. Por favor, extrae productos primero.';
       statusEl.className = 'section-result error';
       statusEl.style.display = 'block';
       return;
     }
-    
-    // Obtener slug y fecha
+
     const tab = await getActiveTab();
     const url = new URL(tab.url);
     const slug = getSlug(url.hostname);
     const fecha = new Date().toISOString().slice(0, 10);
-    
-    // Deshabilitar botón durante proceso
+
     btn.disabled = true;
     btn.textContent = '💾 Guardando...';
     statusEl.style.display = 'block';
     statusEl.textContent = '⏳ Guardando listado...';
     statusEl.className = 'section-result';
-    
-    // Enviar mensaje al background
+
     const response = await chrome.runtime.sendMessage({
       action: 'guardar_listado',
-      payload: {
-        slug: slug,
-        fecha: fecha,
-        items: listado
-      }
+      payload: { slug, fecha, items: listado }
     });
-    
+
     if (response.ok) {
       statusEl.textContent = `✅ Guardado en: ${response.path}`;
       statusEl.className = 'section-result success';
-      
-      // Mostrar botón Exportar Excel
       excelBtn.style.display = 'block';
-      
-      // Guardar referencia para exportación posterior
       window.ultimoGuardado = { slug, fecha };
-      
-      // Si toggle de imágenes está activado, descargar imágenes
       if (document.getElementById('toggleDescargarImagenes').checked) {
         await descargarImagenes(listado, slug, fecha);
       }
-      
     } else {
       statusEl.textContent = `❌ Error: ${response.error}`;
       statusEl.className = 'section-result error';
     }
-    
+
   } catch (error) {
     console.error('Error al guardar listado:', error);
     statusEl.textContent = `❌ Error: ${error.message}`;
@@ -964,37 +961,32 @@ document.getElementById('btnGuardarListado').addEventListener('click', async () 
   }
 });
 
-// Event listener para botón Exportar Excel
 document.getElementById('btnExportExcel').addEventListener('click', async () => {
   const btn = document.getElementById('btnExportExcel');
   const statusEl = document.getElementById('exportStatus');
-  
+
   if (!window.ultimoGuardado) {
     statusEl.textContent = '❌ Debes guardar el listado primero';
     statusEl.className = 'section-result error';
     statusEl.style.display = 'block';
     return;
   }
-  
+
   try {
     btn.disabled = true;
     btn.textContent = '📊 Exportando...';
     statusEl.style.display = 'block';
     statusEl.textContent = '⏳ Exportando a Excel...';
     statusEl.className = 'section-result';
-    
-    // Enviar mensaje al servidor para exportar Excel
+
     const response = await fetch('http://localhost:5001/exportar-excel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        slug: window.ultimoGuardado.slug,
-        fecha: window.ultimoGuardado.fecha
-      })
+      body: JSON.stringify({ slug: window.ultimoGuardado.slug, fecha: window.ultimoGuardado.fecha })
     });
-    
+
     const result = await response.json();
-    
+
     if (result.ok) {
       statusEl.textContent = `✅ Excel exportado: ${result.path}`;
       statusEl.className = 'section-result success';
@@ -1002,7 +994,7 @@ document.getElementById('btnExportExcel').addEventListener('click', async () => 
       statusEl.textContent = `❌ Error: ${result.error}`;
       statusEl.className = 'section-result error';
     }
-    
+
   } catch (error) {
     console.error('Error al exportar Excel:', error);
     statusEl.textContent = `❌ Error: ${error.message}`;
@@ -1013,10 +1005,8 @@ document.getElementById('btnExportExcel').addEventListener('click', async () => 
   }
 });
 
-// Event listener para toggle de descarga de imágenes
 document.getElementById('toggleDescargarImagenes').addEventListener('change', async (e) => {
   if (e.target.checked && window.ultimoGuardado) {
-    // Si se activa y ya hay datos guardados, descargar imágenes
     const listado = await obtenerListadoActual();
     if (listado && listado.length > 0) {
       await descargarImagenes(listado, window.ultimoGuardado.slug, window.ultimoGuardado.fecha);
@@ -1024,14 +1014,12 @@ document.getElementById('toggleDescargarImagenes').addEventListener('change', as
   }
 });
 
-// Función para obtener el listado actual (ficha o listado)
 async function obtenerListadoActual() {
   try {
     const tab = await getActiveTab();
     const response = await enviarMensaje(tab.id, { action: 'get_all_data' });
-    
+
     if (response && response.data) {
-      // Si hay listado, usarlo
       if (response.data.listado && response.data.listado.length > 0) {
         return response.data.listado.map(item => ({
           itemId: item.itemId || item.id || '',
@@ -1042,8 +1030,6 @@ async function obtenerListadoActual() {
           source: item.tienda || item.source || ''
         }));
       }
-      
-      // Si solo hay ficha, crear array con un elemento
       if (response.data.ficha) {
         const ficha = response.data.ficha;
         return [{
@@ -1056,7 +1042,6 @@ async function obtenerListadoActual() {
         }];
       }
     }
-    
     return [];
   } catch (error) {
     console.error('Error al obtener datos:', error);
@@ -1064,36 +1049,29 @@ async function obtenerListadoActual() {
   }
 }
 
-// Función para descargar imágenes
 async function descargarImagenes(items, slug, fecha) {
   const progresoEl = document.getElementById('descargaProgreso');
-  const toggle = document.getElementById('toggleDescargarImagenes');
-  
+
   try {
     progresoEl.style.display = 'block';
     progresoEl.className = 'section-result';
-    
+
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      
       if (item.image && item.itemId) {
         progresoEl.textContent = `Descargando imagen ${i + 1}/${items.length}: ${item.itemId}.jpg`;
-        
-        // Enviar mensaje al background para descargar
         await chrome.runtime.sendMessage({
           action: 'descargar_archivo',
           url: item.image,
           filename: `Productos_BSC/${slug}/${fecha}/imagenes/${item.itemId}.jpg`
         });
-        
-        // Pequeña pausa para no sobrecargar
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
-    
+
     progresoEl.textContent = `✅ ${items.length} imágenes descargadas`;
     progresoEl.className = 'section-result success';
-    
+
   } catch (error) {
     console.error('Error descargando imágenes:', error);
     progresoEl.textContent = `❌ Error descargando imágenes: ${error.message}`;

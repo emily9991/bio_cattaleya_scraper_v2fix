@@ -4,7 +4,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const XLSX = require('xlsx');
+// const XLSX = require('xlsx'); // DESACTIVADO - vulnerabilidad HIGH
 const app = express();
 
 app.use(cors());
@@ -59,9 +59,9 @@ app.post('/guardar-listado', (req, res) => {
 
 // --- EXPORTAR EXCEL ---
 app.post('/exportar-excel', (req, res) => {
-    const { slug, fecha } = req.body;
-    
     try {
+        const { slug, fecha } = req.body;
+        
         // Determinar carpeta base
         const baseDir = process.env.BSC_OUTPUT_DIR || path.join(os.homedir(), 'Downloads');
         
@@ -94,22 +94,44 @@ app.post('/exportar-excel', (req, res) => {
         });
         
         // Crear workbook y worksheet
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+        // const wb = XLSX.utils.book_new();
+        // const ws = XLSX.utils.aoa_to_sheet(wsData);
+        // XLSX.utils.book_append_sheet(wb, ws, 'Productos');
         
         // Guardar archivo Excel
-        const excelFileName = `${slug}_${fecha}.xlsx`;
-        const excelPath = path.join(baseDir, 'Productos_BSC', slug, fecha, excelFileName);
-        XLSX.writeFile(wb, excelPath);
+        // const excelFileName = `${slug}_${fecha}.xlsx`;
+        // const excelPath = path.join(baseDir, 'Productos_BSC', slug, fecha, excelFileName);
+        // XLSX.writeFile(wb, excelPath);
         
-        console.log(`✅ Excel exportado a: ${excelPath}`);
-        res.json({ ok: true, path: excelPath });
+        // console.log(`✅ Excel exportado a: ${excelPath}`);
+        // res.json({ ok: true, path: excelPath });
+        
+        // Temporarily disabled until XLSX is properly installed
+        return res.status(501).json({ ok: false, error: 'Exportación Excel temporalmente deshabilitada' });
         
     } catch (error) {
         console.error('❌ Error al exportar Excel:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
+});
+
+// Ruta para recibir logs de debug de la extensión
+app.post('/log', (req, res) => {
+    const entry = {
+        ts: new Date().toISOString(),
+        ...req.body
+    };
+    const tag = entry.level === 'error' ? 'ERROR' : entry.level === 'warn' ? 'WARN' : 'INFO';
+    console.log(`${tag} [${entry.source}] ${entry.msg}`, entry.data ? JSON.stringify(entry.data).slice(0,200) : '');
+    res.json({ ok: true });
+});
+
+app.get('/logs', (req, res) => {
+    res.json([]);
+});
+
+app.get('/clear', (req, res) => { 
+    res.json({ cleared: true }); 
 });
 
 // Ruta de prueba simple

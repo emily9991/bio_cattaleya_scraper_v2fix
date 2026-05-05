@@ -62,6 +62,7 @@ module.exports = (env, argv) => {
           { from: 'src/utils/secureStorage.js', to: 'secureStorage.js' },
           { from: 'manifest.json', to: 'manifest.json' },
           { from: 'popup.html', to: 'popup.html' },
+          { from: 'content.js', to: 'content.js' },
           { from: 'sidepanel.html', to: 'sidepanel.html' },
           { from: 'tesseract.min.js', to: 'tesseract.min.js' },
           { from: 'lib/', to: 'lib/' },

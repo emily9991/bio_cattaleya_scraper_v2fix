@@ -36,3 +36,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+// Debug log routing - enviar eventos al servidor debug
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'debug_log') {
+    fetch('http://localhost:5001/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message.entry)
+    }).catch(() => {});
+  }
+});
