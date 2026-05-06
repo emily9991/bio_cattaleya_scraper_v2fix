@@ -1104,7 +1104,8 @@ async function descargarPaqueteCompleto(datos) {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
     .slice(0, 40)
     .trim();
-  var carpeta = 'BioCattaleya/' + nombreProducto + '_' + ts;
+  var skuId = (datos.url || '').match(/id=(\d+)/)?.[1] || 'producto';
+  var carpeta = 'BioCattaleya/' + skuId + '_' + ts;
 
   // 1. JSON
   var jsonStr = JSON.stringify(datos, null, 2);
@@ -1116,20 +1117,33 @@ async function descargarPaqueteCompleto(datos) {
     conflictAction: 'overwrite'
   });
 
-  // 2. CSV del producto
-  var csvContent = construirCSVDesdeJSON(datos);
-  var encoder = new TextEncoder();
-  var bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-  var encoded = encoder.encode(csvContent);
-  var merged = new Uint8Array(bom.length + encoded.length);
-  merged.set(bom, 0);
-  merged.set(encoded, bom.length);
-  var csvBlob = new Blob([merged], { type: 'text/csv;charset=utf-8' });
-  var csvUrl = URL.createObjectURL(csvBlob);
+  // 2. XLSX del producto
+  var wb = XLSX.utils.book_new();
+  var fila = {
+    'SKU':           (datos.url || '').match(/id=(\d+)/)?.[1] || '',
+    'Nombre (ZH)':   datos.nombre    || '',
+    'Nombre (EN)':   '',
+    'Tienda':        datos.tienda    || '',
+    'Precio CNY':    datos.precio    || '',
+    'Precio USD':    '',
+    'Calificacion':  datos.calificaciones || '',
+    'Ventas':        datos.ventas    || '',
+    'Descripcion':   datos.descripcion || '',
+    'Specs':         (datos.specs || []).join(' | '),
+    'Sitio':         datos.sitio     || '',
+    'URL':           datos.url       || '',
+  };
+  var ws = XLSX.utils.json_to_sheet([fila]);
+  XLSX.utils.book_append_sheet(wb, ws, 'Producto');
+  var xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+  var xlsxDataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBuffer;
+  var ts2 = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+  var skuId2 = (datos.url || '').match(/id=(\d+)/)?.[1] || 'producto';
   chrome.downloads.download({
-    url: csvUrl,
-    filename: carpeta + '/datos.csv',
-    conflictAction: 'overwrite'
+    url: xlsxDataUrl,
+    filename: 'BioCattaleya_' + skuId2 + '_' + ts2 + '.xlsx',
+    conflictAction: 'overwrite',
+    saveAs: false
   });
 
   // 3. Imágenes
