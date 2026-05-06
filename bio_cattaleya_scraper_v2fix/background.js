@@ -237,7 +237,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // ─── DESCARGA DE ARCHIVOS ─────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'descargar_archivo') {
-    const blob = new Blob([message.contenido], { type: message.tipo || 'application/json' });
+    const bytes = message.contenido instanceof Array 
+      ? new Uint8Array(message.contenido) 
+      : message.contenido;
+    const blob = new Blob([bytes], { type: message.tipo || 'application/json' });
     const url = URL.createObjectURL(blob);
     chrome.downloads.download({ url, filename: message.nombre, saveAs: false }, (id) => {
       sendResponse({ status: 'ok', downloadId: id });

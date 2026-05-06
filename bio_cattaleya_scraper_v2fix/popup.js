@@ -869,21 +869,34 @@ async function accionCompleta(tabId) {
   }, 5000);
 }
 
-function descargarArchivo(filename, content) {
-  // Encode explícito a UTF-8 con BOM usando TextEncoder
-  var encoder = new TextEncoder();
-  var bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-  var encoded = encoder.encode(content);
-  var merged = new Uint8Array(bom.length + encoded.length);
-  merged.set(bom, 0);
-  merged.set(encoded, bom.length);
-  var blob = new Blob([merged], { type: 'text/csv;charset=utf-8' });
+function descargarArchivo(filename, content, tipo) {
+  var blob;
+  if (content instanceof Uint8Array || content instanceof ArrayBuffer) {
+    blob = new Blob([content], { type: tipo || 'application/octet-stream' });
+  } else if (typeof content === 'string' && tipo === 'xlsx') {
+    var buf = new ArrayBuffer(content.length);
+    var view = new Uint8Array(buf);
+    for (var i = 0; i < content.length; i++) {
+      view[i] = content.charCodeAt(i) & 0xFF;
+    }
+    blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  } else {
+    var encoder = new TextEncoder();
+    var bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    var encoded = encoder.encode(content);
+    var merged = new Uint8Array(bom.length + encoded.length);
+    merged.set(bom, 0);
+    merged.set(encoded, bom.length);
+    blob = new Blob([merged], { type: tipo || 'text/csv;charset=utf-8' });
+  }
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
 }
 
 function mostrarExportStatus(msg, tipo) {
@@ -1135,16 +1148,10 @@ async function descargarPaqueteCompleto(datos) {
   };
   var ws = XLSX.utils.json_to_sheet([fila]);
   XLSX.utils.book_append_sheet(wb, ws, 'Producto');
-  var xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-  var xlsxDataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBuffer;
+  var xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
   var ts2 = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
   var skuId2 = (datos.url || '').match(/id=(\d+)/)?.[1] || 'producto';
-  chrome.downloads.download({
-    url: xlsxDataUrl,
-    filename: 'BioCattaleya_' + skuId2 + '_' + ts2 + '.xlsx',
-    conflictAction: 'overwrite',
-    saveAs: false
-  });
+  descargarArchivo('BioCattaleya_' + skuId2 + '_' + ts2 + '.xlsx', xlsxBuffer, 'xlsx');
 
   // 3. Imágenes
   var imagenes = datos.imagenes || [];
