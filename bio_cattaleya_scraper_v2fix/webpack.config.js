@@ -3,6 +3,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 // const JavaScriptObfuscator = require('webpack-obfuscator'); // DESHABILITADO - causa crash
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
+// xlsx se importa desde popup.js directamente via npm
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -65,6 +66,7 @@ module.exports = (env, argv) => {
           { from: 'content.js', to: 'content.js' },
           { from: 'sidepanel.html', to: 'sidepanel.html' },
           { from: 'tesseract.min.js', to: 'tesseract.min.js' },
+          { from: path.resolve(__dirname, 'xlsx.min.js'), to: 'xlsx.min.js' },
           { from: 'lib/', to: 'lib/' },
           { from: 'icons/', to: 'icons/', noErrorOnMissing: true }
         ]

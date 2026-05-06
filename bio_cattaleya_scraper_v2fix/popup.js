@@ -216,9 +216,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnExportAll').addEventListener('click', async () => {
     const tab = await getActiveTab();
     if (!tab?.id) return;
-    await exportarJSON(tab.id);
-    await exportarCSV(tab.id);
-    mostrarExportStatus('✅ JSON y CSV descargados', 'success');
+
+    chrome.tabs.sendMessage(tab.id, { action: 'get_all_data' }, async (datos) => {
+      if (chrome.runtime.lastError) {
+        console.warn('[BSC] content script no disponible:', chrome.runtime.lastError.message);
+        await exportarJSON(tab.id);
+        await exportarCSV(tab.id);
+        mostrarExportStatus('✅ JSON y CSV descargados', 'success');
+        return;
+      }
+      if (!datos || !datos.nombre) {
+        mostrarExportStatus('⚠️ Primero escanea el producto', 'warning');
+        return;
+      }
+      await descargarPaqueteCompleto(datos);
+      mostrarExportStatus('✅ Paquete completo descargando...', 'success');
+    });
   });
   document.getElementById('btnCheckPython').addEventListener('click', () => checkPython());
   document.getElementById('btnExportMain').addEventListener('click', async () => {
@@ -545,35 +558,30 @@ function sanitizarTextoChino(str) {
 }
 
 function exportarListadoCSV() {
-  const rows = ultimoListado.length ? ultimoListado : [];
-  if (rows.length === 0) {
-    const lr = document.getElementById('listingDetectResult');
-    if (lr) {
-      lr.textContent = 'Primero pulsa «Escanear productos del listado».';
-      lr.className = 'section-result error';
-    }
-    return;
-  }
-  const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const SEP = ';';
-  const header = ['Nombre', 'Precio (CNY)', 'Compradores', 'URL', 'Imagen'].map(h => '"' + h + '"').join(SEP);
-  // FIX #1: sanitizar nombre antes de escapar para CSV
-  const lines = rows.map((r) => [
-    sanitizarTextoChino(r.nombre || ''),
-    r.precio,
-    r.compradores,
-    r.url,
-    r.imagen
-  ].map(esc).join(SEP));
-  const csv = 'sep=' + SEP + '\n' + header + '\n' + lines.join('\n');
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  descargarArchivo('BioCattaleya_listado_' + ts + '.csv', csv);
-  const lr = document.getElementById('listingDetectResult');
-  if (lr) {
-    lr.textContent = '✅ CSV descargado (' + rows.length + ' filas)';
-    lr.className = 'section-result success';
-  }
-  setStatus('Listado exportado');
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    if (!tabs[0]?.id) return;
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'get_all_data' }, function(datos) {
+      if (chrome.runtime.lastError || !datos || !datos.listado?.length) {
+        mostrarExportStatus('⚠️ No hay productos en el listado', 'warning');
+        return;
+      }
+      var wb = XLSX.utils.book_new();
+      var filas = datos.listado.map(function(item) {
+        return {
+          'Nombre':    item.nombre || item.titulo || '',
+          'Precio CNY': item.precio || '',
+          'URL':       item.url    || '',
+          'Imagen':    item.imagen || '',
+          'Tienda':    item.tienda || '',
+        };
+      });
+      var ws = XLSX.utils.json_to_sheet(filas);
+      XLSX.utils.book_append_sheet(wb, ws, 'Listado');
+      var ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+      XLSX.writeFile(wb, 'BioCattaleya_listado_' + ts + '.xlsx');
+      mostrarExportStatus('✅ Excel descargado', 'success');
+    });
+  });
 }
 
 async function ejecutarAccion(action, badgeId, resultId, tabId) {
@@ -660,26 +668,21 @@ function construirImagenesColor(imagenesPorColor) {
 
 // Mejora #4: listing export
 function exportarCSVListado(items) {
-  if (typeof bscLog !== 'undefined') bscLog('csv', 'exportando', { items: items.length });
-  if (!items || items.length === 0) {
-    mostrarNotificacion('No hay items de listado capturados', 'warning');
-    return;
-  }
-  var headers = ['Title', 'URL', 'Image', 'Price', 'Source'];
-  // FIX #3: sanitizar título en función legacy exportarCSVListado
+  if (!items || !items.length) return;
+  var wb = XLSX.utils.book_new();
   var filas = items.map(function(item) {
-    var titulo = sanitizarTextoChino(item.nombre || item.title || '');
-    return [
-      '"' + titulo.replace(/"/g, '""') + '"',
-      '"' + (item.url || '') + '"',
-      '"' + (item.imagen || item.image || '') + '"',
-      '"' + (item.precio || '') + '"',
-      '"' + (item.source || 'unknown') + '"'
-    ].join(',');
+    return {
+      'Nombre':     item.nombre || item.titulo || '',
+      'Precio CNY': item.precio || '',
+      'URL':        item.url    || '',
+      'Imagen':     item.imagen || '',
+      'Tienda':     item.tienda || '',
+    };
   });
-  var csv = headers.join(',') + '\n' + filas.join('\n');
-  descargarArchivo('listing_' + Date.now() + '.csv', csv);
-  mostrarNotificacion('Exportado: ' + items.length + ' items', 'success');
+  var ws = XLSX.utils.json_to_sheet(filas);
+  XLSX.utils.book_append_sheet(wb, ws, 'Listado');
+  var ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+  XLSX.writeFile(wb, 'BioCattaleya_listado_' + ts + '.xlsx');
 }
 
 function construirFila(datos) {
@@ -773,17 +776,23 @@ async function exportarJSON(tabId) {
 }
 
 async function exportarCSV(tabId) {
-  const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
-  if (!datos) return;
-  const fila = construirFila(datos);
-  const escapar = v => '"' + String(v || '').replace(/"/g, '""').replace(/\n/g, ' ') + '"';
-  const SEP = ';';
-  const headers = Object.keys(fila).map(h => '"' + h + '"').join(SEP);
-  const values = Object.values(fila).map(escapar).join(SEP);
-  const csv = 'sep=' + SEP + '\n' + headers + '\n' + values;
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  descargarArchivo('BioCattaleya_' + ts + '.csv', csv);
-  mostrarExportStatus('✅ CSV descargado con columnas organizadas', 'success');
+  chrome.tabs.sendMessage(tabId, { action: 'get_all_data' }, function(datos) {
+    if (chrome.runtime.lastError || !datos) return;
+    var wb = XLSX.utils.book_new();
+    var fila = {
+      'Tienda':        datos.tienda        || '',
+      'Nombre (ZH)':   datos.nombre        || '',
+      'Precio CNY':    datos.precio        || '',
+      'Calificacion':  datos.calificaciones|| '',
+      'Ventas':        datos.ventas        || '',
+      'Sitio':         datos.sitio         || '',
+      'URL':           datos.url           || '',
+    };
+    var ws = XLSX.utils.json_to_sheet([fila]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Producto');
+    var ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+    XLSX.writeFile(wb, 'BioCattaleya_' + ts + '.xlsx');
+  });
 }
 
 async function enviarPython(tabId) {
@@ -861,7 +870,14 @@ async function accionCompleta(tabId) {
 }
 
 function descargarArchivo(filename, content) {
-  var blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8' });
+  // Encode explícito a UTF-8 con BOM usando TextEncoder
+  var encoder = new TextEncoder();
+  var bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  var encoded = encoder.encode(content);
+  var merged = new Uint8Array(bom.length + encoded.length);
+  merged.set(bom, 0);
+  merged.set(encoded, bom.length);
+  var blob = new Blob([merged], { type: 'text/csv;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
@@ -1079,4 +1095,88 @@ async function descargarImagenes(items, slug, fecha) {
     progresoEl.textContent = `❌ Error descargando imágenes: ${error.message}`;
     progresoEl.className = 'section-result error';
   }
+// ============================================================
+// DESCARGA PAQUETE COMPLETO — carpeta con img/, videos/, CSV, JSON
+// ============================================================
+async function descargarPaqueteCompleto(datos) {
+  var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  var nombreProducto = (datos.nombre || 'producto')
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+    .slice(0, 40)
+    .trim();
+  var carpeta = 'BioCattaleya/' + nombreProducto + '_' + ts;
+
+  // 1. JSON
+  var jsonStr = JSON.stringify(datos, null, 2);
+  var jsonBlob = new Blob([jsonStr], { type: 'application/json' });
+  var jsonUrl = URL.createObjectURL(jsonBlob);
+  chrome.downloads.download({
+    url: jsonUrl,
+    filename: carpeta + '/datos.json',
+    conflictAction: 'overwrite'
+  });
+
+  // 2. CSV del producto
+  var csvContent = construirCSVDesdeJSON(datos);
+  var encoder = new TextEncoder();
+  var bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  var encoded = encoder.encode(csvContent);
+  var merged = new Uint8Array(bom.length + encoded.length);
+  merged.set(bom, 0);
+  merged.set(encoded, bom.length);
+  var csvBlob = new Blob([merged], { type: 'text/csv;charset=utf-8' });
+  var csvUrl = URL.createObjectURL(csvBlob);
+  chrome.downloads.download({
+    url: csvUrl,
+    filename: carpeta + '/datos.csv',
+    conflictAction: 'overwrite'
+  });
+
+  // 3. Imágenes
+  var imagenes = datos.imagenes || [];
+  imagenes.forEach(function(imgUrl, i) {
+    if (!imgUrl) return;
+    var ext = imgUrl.split('.').pop().split('?')[0] || 'jpg';
+    // limpiar extensiones dobles tipo .jpg_.webp
+    ext = ext.replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+    chrome.downloads.download({
+      url: imgUrl,
+      filename: carpeta + '/img/imagen_' + (i + 1) + '.' + ext,
+      conflictAction: 'overwrite'
+    });
+  });
+
+  // 4. Video
+  if (datos.video && datos.video.trim() !== '') {
+    var vidExt = datos.video.split('.').pop().split('?')[0] || 'mp4';
+    chrome.downloads.download({
+      url: datos.video,
+      filename: carpeta + '/videos/video_1.' + vidExt,
+      conflictAction: 'overwrite'
+    });
+  }
+
+  console.log('[BSC] Paquete descargando en Downloads/' + carpeta);
 }
+
+// Construye CSV desde el objeto de datos del producto
+function construirCSVDesdeJSON(datos) {
+  var SEP = ',';
+  var esc = function(v) {
+    var s = (v == null ? '' : String(v)).replace(/"/g, '""');
+    return '"' + s + '"';
+  };
+  var header = ['Nombre','Precio','Tienda','Calificaciones','Ventas','URL','Sitio'].join(SEP);
+  var fila = [
+    datos.nombre || '',
+    datos.precio || '',
+    datos.tienda || '',
+    datos.calificaciones || datos.rating || '',
+    datos.ventas || '',
+    datos.url || '',
+    datos.sitio || ''
+  ].map(esc).join(SEP);
+  return header + '\n' + fila;
+}
+}
+
