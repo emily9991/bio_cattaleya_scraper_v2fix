@@ -22,10 +22,11 @@
     "https://localhost:3000/*",
     "http://127.0.0.1:5000/*",
     "http://localhost:5001/*",
-    "http://127.0.0.1:5001/*"
+    "http://127.0.0.1:5001/*",
+    "https://*.cloudvideocdn.taobao.com/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://api.notion.com https://localhost:3000 http://127.0.0.1:5000 http://localhost:5001 http://127.0.0.1:5001 https://img.alicdn.com https://cloud.video.taobao.com;"
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https://api.notion.com https://localhost:3000 http://127.0.0.1:5000 http://localhost:5001 http://127.0.0.1:5001 https://img.alicdn.com https://cloud.video.taobao.com https://*.cloudvideocdn.taobao.com;"
   },
   "action": {},
   "side_panel": {

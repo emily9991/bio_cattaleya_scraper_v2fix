@@ -374,7 +374,7 @@ function limpiarUrlImagen(src) {
   if (!src || !src.startsWith("http")) return "";
   src = src.split("?")[0];
   // Quitar sufijos de compresión Tmall: _q50.jpg_.jpg, _50x50.jpg, etc.
-  src = src.replace(/_q\d+\.jpg_\.jpg$/i, ".jpg");
+  src = src.replace(/(_q\d+x?\d*)?\.jpg_.*\.jpg$/i, ".jpg");
   src = src.replace(/_\d+x\d+[^.]*\.(jpg|png|webp)/i, ".$1");
   src = src.replace(/\.webp$/i, ".jpg");
   // Forzar HD quitando sufijos de resize
