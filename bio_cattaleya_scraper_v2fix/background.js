@@ -138,6 +138,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'fetch_image_b64') {
+    fetch(message.url)
+      .then(r => r.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => sendResponse({ b64: reader.result });
+        reader.readAsDataURL(blob);
+      })
+      .catch(e => sendResponse({ error: e.message }));
+    return true;
+  }
+
   if (message.action === 'validate_license_now') {
     validateLicense()
       .then(() => sendResponse({ success: true }))

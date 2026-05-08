@@ -527,6 +527,15 @@
   .ocr-log .log-line { display: block; }
   .section-card.ocr-card { border-color: rgba(255,110,247,0.3); }
   .section-card.ocr-card .section-header { background: rgba(255,110,247,0.05); }
+  .galeria-toolbar { display:flex; align-items:center; gap:6px; margin:8px 0 6px; flex-wrap:wrap; }
+  .galeria-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; max-height:260px; overflow-y:auto; padding-right:2px; }
+  .galeria-item { position:relative; border-radius:6px; overflow:hidden; border:2px solid transparent; cursor:pointer; transition:border-color 0.15s; aspect-ratio:1; background:rgba(0,0,0,0.3); }
+  .galeria-item.selected { border-color:var(--accent); }
+  .galeria-item img { width:100%; height:100%; object-fit:cover; display:block; }
+  .galeria-item .chk { position:absolute; top:4px; left:4px; width:16px; height:16px; border-radius:4px; background:rgba(0,0,0,0.6); border:1.5px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; font-size:10px; color:white; }
+  .galeria-item.selected .chk { background:var(--accent); border-color:var(--accent); }
+  .galeria-video-badge { position:absolute; bottom:4px; right:4px; background:rgba(0,0,0,0.7); color:var(--yellow); font-size:9px; padding:1px 5px; border-radius:3px; font-weight:700; }
+  .galeria-count { font-size:10px; color:var(--text-dim); margin-left:auto; }
 </style>
 </head>
 <body>
@@ -630,6 +639,7 @@
   </div>
 
   <!-- Paso 3: Media -->
+  <!-- Paso 3: Media -->
   <div class="section-card">
     <div class="section-header" id="hdr3">
       <span class="section-icon">📸</span>
@@ -639,6 +649,18 @@
     <div class="section-body" id="body3">
       <div class="section-result" id="result3">Captura imágenes HD y video del producto.</div>
       <button class="btn btn-primary" id="btnMedia">▶ Capturar Media</button>
+      <div id="galeriaMedia" style="display:none;margin-top:8px">
+        <div class="galeria-toolbar">
+          <button class="btn btn-secondary" id="btnSelAll" style="width:auto;margin-top:0;padding:5px 10px;font-size:10px">☑ Todas</button>
+          <button class="btn btn-secondary" id="btnSelNone" style="width:auto;margin-top:0;padding:5px 10px;font-size:10px">☐ Ninguna</button>
+          <span class="galeria-count"><span id="galeriaSelCount">0</span> sel.</span>
+        </div>
+        <div class="galeria-grid" id="galeriaGrid"></div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-green" id="btnDescargarSel" style="font-size:11px">⬇ Descargar sel.</button>
+          <button class="btn btn-secondary" id="btnNotionSel" style="font-size:11px">🗃 → Notion</button>
+        </div>
+      </div>
     </div>
   </div>
 

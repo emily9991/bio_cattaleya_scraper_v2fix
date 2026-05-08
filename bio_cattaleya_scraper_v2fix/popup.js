@@ -127,7 +127,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tab = await getActiveTab();
     if (!tab?.id) return;
     await ejecutarAccion('get_media', 'badge3', 'result3', tab.id);
+    const datos = await enviarMensaje(tab.id, { action: 'get_all_data' });
+    console.log('[BSC] imagenes:', datos?.imagenes?.length, datos?.imagenes?.[0]);
+    renderizarGaleria(datos);
   });
+
+ const _btnSelAll = document.getElementById('btnSelAll');
+if (_btnSelAll) _btnSelAll.addEventListener('click', () => {
+  document.querySelectorAll('.galeria-item').forEach(el => el.classList.add('selected'));
+  actualizarContadorGaleria();
+});
+const _btnSelNone = document.getElementById('btnSelNone');
+if (_btnSelNone) _btnSelNone.addEventListener('click', () => {
+  document.querySelectorAll('.galeria-item').forEach(el => el.classList.remove('selected'));
+  actualizarContadorGaleria();
+});
+const _btnDescargarSel = document.getElementById('btnDescargarSel');
+if (_btnDescargarSel) _btnDescargarSel.addEventListener('click', descargarSeleccionadas);
+const _btnNotionSel = document.getElementById('btnNotionSel');
+if (_btnNotionSel) _btnNotionSel.addEventListener('click', () => {
+  mostrarExportStatus('⏳ Notion sync — próximamente', '');
+  cambiarTab('export');
+});
 
   document.getElementById('btnPagination').addEventListener('click', async () => {
     const tab = await getActiveTab();
@@ -1108,6 +1129,7 @@ async function descargarImagenes(items, slug, fecha) {
     progresoEl.textContent = `❌ Error descargando imágenes: ${error.message}`;
     progresoEl.className = 'section-result error';
   }
+}
 // ============================================================
 // DESCARGA PAQUETE COMPLETO — carpeta con img/, videos/, CSV, JSON
 // ============================================================
@@ -1199,5 +1221,61 @@ function construirCSVDesdeJSON(datos) {
   ].map(esc).join(SEP);
   return header + '\n' + fila;
 }
+function renderizarGaleria(datos) {
+  if (!datos) return;
+  const imgs = datos.imagenes || [];
+  const video = datos.video || null;
+  const grid = document.getElementById('galeriaGrid');
+  const wrap = document.getElementById('galeriaMedia');
+  if (!grid || !wrap) return;
+  if (!imgs.length && !video) return;
+
+  const items = [...imgs.map(url => ({ url, tipo: 'img' }))];
+  if (video) items.push({ url: video, tipo: 'video' });
+
+  grid.innerHTML = items.map((item, i) => {
+    const badge = item.tipo === 'video' ? `<span class="galeria-video-badge">▶ VIDEO</span>` : '';
+    return `<div class="galeria-item selected" data-url="${item.url}" data-tipo="${item.tipo}" data-idx="${i}">
+      <div class="chk">✓</div>
+      <img src="${item.url}">
+      ${badge}
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.galeria-item img').forEach(img => {
+    const url = img.getAttribute('src');
+    if (!url) return;
+    img.src = '';
+    chrome.runtime.sendMessage({ action: 'fetch_image_b64', url }, res => {
+      if (res && res.b64) img.src = res.b64;
+    });
+  });
+
+  grid.querySelectorAll('.galeria-item').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('selected');
+      actualizarContadorGaleria();
+    });
+  });
+
+  actualizarContadorGaleria();
+  wrap.style.display = 'block';
 }
 
+function actualizarContadorGaleria() {
+  const sel = document.querySelectorAll('.galeria-item.selected').length;
+  const el = document.getElementById('galeriaSelCount');
+  if (el) el.textContent = sel;
+}
+
+function descargarSeleccionadas() {
+  const items = [...document.querySelectorAll('.galeria-item.selected')];
+  if (!items.length) { mostrarExportStatus('⚠️ Selecciona al menos una imagen', ''); return; }
+  items.forEach((el, i) => {
+    const url = el.dataset.url;
+    if (!url) return;
+    const ext = url.split('.').pop().split('?')[0].replace(/[^a-zA-Z0-9]/g,'') || 'jpg';
+    const nombre = el.dataset.tipo === 'video' ? `video_1.${ext}` : `imagen_${i+1}.${ext}`;
+    chrome.downloads.download({ url, filename: 'BioCattaleya/seleccion/' + nombre, conflictAction: 'overwrite' });
+  });
+  mostrarExportStatus(`✅ Descargando ${items.length} archivo(s)`, 'success');
+}

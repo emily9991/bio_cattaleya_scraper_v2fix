@@ -330,49 +330,96 @@ function extraerImagenes() {
   var imgs = new Set();
   var panelIzq = encontrarPanelProducto() || document.body;
 
-  var thumbs = panelIzq.querySelectorAll(
-    "[class*='thumb--'] img, [class*='Thumb--'] img, [class*='picItem--'] img," +
-    "#J_Slides li img, .tb-thumb img, [class*='imgItem--'] img"
-  );
-  thumbs.forEach(function(img) {
-    var src = img.src || img.getAttribute("data-src") || img.getAttribute("data-lazy-src") || "";
-    src = src.replace(/_\d+x\d+.*?\.(jpg|png|webp)/i, ".$1").replace(/\.webp$/i, ".jpg");
-    if (src && src.startsWith("http")) imgs.add(src);
+  // 1. Thumbnails — upgrade a HD
+  var thumbSelectors = [
+    "[class*='thumb--'] img", "[class*='Thumb--'] img",
+    "[class*='picItem--'] img", "[class*='imgItem--'] img",
+    "#J_Slides li img", ".tb-thumb img",
+    "[class*='imageList--'] img", "[class*='ImageList--'] img",
+    "[class*='slide--'] img", "[class*='Slide--'] img"
+  ];
+  panelIzq.querySelectorAll(thumbSelectors.join(",")).forEach(function(img) {
+    var src = img.getAttribute("data-src") || img.getAttribute("data-lazy-src") || img.src || "";
+    src = limpiarUrlImagen(src);
+    if (src) imgs.add(src);
   });
 
-  var mainImg = panelIzq.querySelector(
-    "[class*='mainImg--'],[class*='MainImg--'],#J_MainImg img,.tb-booth-img img"
-  );
-  if (mainImg) {
-    var msrc = mainImg.src || mainImg.getAttribute("data-src") || "";
-    msrc = msrc.replace(/_\d+x\d+.*?\.(jpg|png|webp)/i, ".$1");
-    if (msrc && msrc.startsWith("http")) imgs.add(msrc);
-  }
+  // 2. Imagen principal
+  var mainSelectors = [
+    "[class*='mainImg--'] img", "[class*='MainImg--'] img",
+    "[class*='mainPic--'] img", "[class*='MainPic--'] img",
+    "#J_MainImg img", ".tb-booth-img img"
+  ];
+  panelIzq.querySelectorAll(mainSelectors.join(",")).forEach(function(img) {
+    var src = img.getAttribute("data-src") || img.src || "";
+    src = limpiarUrlImagen(src);
+    if (src) imgs.add(src);
+  });
 
-  if (imgs.size === 0) {
+  // 3. Fallback: todas las alicdn > 300px
+  if (imgs.size < 3) {
     document.querySelectorAll("img").forEach(function(img) {
-      var src = img.src || "";
-      if (src.includes("img.alicdn.com") && img.naturalWidth > 200) imgs.add(src);
+      var src = img.getAttribute("data-src") || img.src || "";
+      if (src.includes("img.alicdn.com") && img.naturalWidth > 300) {
+        src = limpiarUrlImagen(src);
+        if (src) imgs.add(src);
+      }
     });
   }
 
-  return Array.from(imgs).slice(0, 20);
+  return Array.from(imgs);
+}
+
+function limpiarUrlImagen(src) {
+  if (!src || !src.startsWith("http")) return "";
+  src = src.split("?")[0];
+  // Quitar sufijos de compresión Tmall: _q50.jpg_.jpg, _50x50.jpg, etc.
+  src = src.replace(/_q\d+\.jpg_\.jpg$/i, ".jpg");
+  src = src.replace(/_\d+x\d+[^.]*\.(jpg|png|webp)/i, ".$1");
+  src = src.replace(/\.webp$/i, ".jpg");
+  // Forzar HD quitando sufijos de resize
+  src = src.replace(/_(50|60|80|100|120|160|200|240|300|400|500|600|800)x\d*/i, "");
+  return src;
 }
 
 function extraerVideo() {
+  // 1. Video element directo
   var videoEl = document.querySelector(
     "[class*='mainVideo--'] video, [class*='MainVideo--'] video," +
-    "#J_VideoBox video, .tb-video video, video[src*='alicdn']"
+    "[class*='video--'] video, #J_VideoBox video, .tb-video video," +
+    "video[src*='alicdn'], video[src*='taobao']"
   );
   if (videoEl && videoEl.src) return videoEl.src;
-  var sourceEl = document.querySelector("video source");
+  if (videoEl && videoEl.querySelector) {
+    var src = videoEl.querySelector("source");
+    if (src && src.src) return src.src;
+  }
+
+  // 2. Source suelto
+  var sourceEl = document.querySelector("video source[src]");
   if (sourceEl && sourceEl.src) return sourceEl.src;
+
+  // 3. Tmall 2026 — video en atributo data o JSON inline
+  var dataVideo = document.querySelector("[data-video-url],[data-src*='.mp4']");
+  if (dataVideo) {
+    return dataVideo.getAttribute("data-video-url") || dataVideo.getAttribute("data-src") || "";
+  }
+
+  // 4. Buscar en scripts inline
+  var scripts = document.querySelectorAll("script:not([src])");
+  for (var i = 0; i < scripts.length; i++) {
+    var txt = scripts[i].textContent || "";
+    var match = txt.match(/https?:\/\/[^"'\s]+\.mp4[^"'\s]*/);
+    if (match) return match[0];
+  }
+
   return "";
 }
 
 function extraerMedia() {
   try {
     var imagenes = extraerImagenes();
+    console.log("📸 [BSC] URLs:", JSON.stringify(imagenes));
     var video = extraerVideo();
 
     datosExtraidos.imagenes = imagenes;
@@ -385,10 +432,10 @@ function extraerMedia() {
       data: { imagenes: imagenes, video: video }
     };
   } catch(e) {
+    console.error("❌ [BSC] Error en extraerMedia:", e);
     return { status: "error", details: "Error extrayendo media: " + e.message };
   }
 }
-
 // ============================================================
 // DETECCION DE PAGINACION
 // ============================================================
