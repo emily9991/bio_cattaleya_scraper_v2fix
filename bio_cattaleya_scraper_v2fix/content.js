@@ -373,12 +373,8 @@ function extraerImagenes() {
 function limpiarUrlImagen(src) {
   if (!src || !src.startsWith("http")) return "";
   src = src.split("?")[0];
-  // Quitar sufijos de compresión Tmall: _q50.jpg_.jpg, _50x50.jpg, etc.
-  src = src.replace(/(_q\d+x?\d*)?\.jpg_.*\.jpg$/i, ".jpg");
-  src = src.replace(/_\d+x\d+[^.]*\.(jpg|png|webp)/i, ".$1");
+  src = src.replace(/(\.jpg|\.png|\.webp).*$/i, "$1");
   src = src.replace(/\.webp$/i, ".jpg");
-  // Forzar HD quitando sufijos de resize
-  src = src.replace(/_(50|60|80|100|120|160|200|240|300|400|500|600|800)x\d*/i, "");
   return src;
 }
 
