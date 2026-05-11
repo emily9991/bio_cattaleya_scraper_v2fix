@@ -122,7 +122,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnMedia').addEventListener('click', async () => {
     const tab = await getActiveTab();
     if (!tab?.id) return;
-    await ejecutarAccion('get_media', 'badge3', 'result3', tab.id);
+    const res = await ejecutarAccion('get_media', 'badge3', 'result3', tab.id);
+    if (res?.data?.imagenes?.length || res?.data?.video) {
+      mostrarGaleriaMedia(res.data.imagenes || [], res.data.video || null);
+    }
   });
 
   document.getElementById('btnPagination').addEventListener('click', async () => {
@@ -498,6 +501,7 @@ function exportarListadoCSV() {
   setStatus('Listado exportado');
 }
 
+// ─── EJECUTAR ACCIÓN (retorna res para que btnMedia pueda leer data) ──────────
 async function ejecutarAccion(action, badgeId, resultId, tabId) {
   const badge = document.getElementById(badgeId);
   const result = document.getElementById(resultId);
@@ -519,6 +523,138 @@ async function ejecutarAccion(action, badgeId, resultId, tabId) {
     result.textContent = '⚠️ Error. Recarga la página e inténtalo de nuevo.';
     result.className = 'section-result error';
   }
+  return res;
+}
+
+// ─── GALERÍA MEDIA ────────────────────────────────────────────
+async function mostrarGaleriaMedia(imagenes, video) {
+  const grid = document.getElementById('galeriaGrid');
+  const wrap = document.getElementById('galeriaMedia');
+  const counter = document.getElementById('galeriaSelCount');
+  if (!grid || !wrap) return;
+
+  grid.innerHTML = '';
+
+  // Imágenes
+  for (let i = 0; i < imagenes.length; i++) {
+    const url = imagenes[i];
+    const div = document.createElement('div');
+    div.className = 'galeria-item';
+    div.dataset.url = url;
+    div.dataset.tipo = 'imagen';
+    div.innerHTML = '<div class="chk"></div><img src="" alt="" loading="lazy">';
+    const img = div.querySelector('img');
+    chrome.runtime.sendMessage({ action: 'fetch_image_b64', url }, res => {
+      if (res?.b64) img.src = res.b64;
+      else img.style.background = 'var(--surface2)';
+    });
+    div.addEventListener('click', () => {
+      div.classList.toggle('selected');
+      counter.textContent = grid.querySelectorAll('.galeria-item.selected').length;
+    });
+    grid.appendChild(div);
+  }
+
+  // Video
+  if (video) {
+    const div = document.createElement('div');
+    div.className = 'galeria-item';
+    div.dataset.url = video;
+    div.dataset.tipo = 'video';
+    div.innerHTML = '<div class="chk"></div><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--surface2);font-size:22px">▶</div><span class="galeria-video-badge">VIDEO</span>';
+    div.addEventListener('click', () => {
+      div.classList.toggle('selected');
+      counter.textContent = grid.querySelectorAll('.galeria-item.selected').length;
+    });
+    grid.appendChild(div);
+  }
+
+  // Botones seleccionar todas / ninguna — usar replaceWith para evitar listeners duplicados
+  const btnAll = document.getElementById('btnSelAll');
+  const btnNone = document.getElementById('btnSelNone');
+  if (btnAll) {
+    const newAll = btnAll.cloneNode(true);
+    btnAll.replaceWith(newAll);
+    newAll.addEventListener('click', () => {
+      grid.querySelectorAll('.galeria-item').forEach(el => el.classList.add('selected'));
+      counter.textContent = grid.querySelectorAll('.galeria-item.selected').length;
+    });
+  }
+  if (btnNone) {
+    const newNone = btnNone.cloneNode(true);
+    btnNone.replaceWith(newNone);
+    newNone.addEventListener('click', () => {
+      grid.querySelectorAll('.galeria-item').forEach(el => el.classList.remove('selected'));
+      counter.textContent = '0';
+    });
+  }
+
+  // Botón descargar — usar replaceWith para evitar listeners duplicados
+  const btnDes = document.getElementById('btnDescargarSel');
+  if (btnDes) {
+    const newDes = btnDes.cloneNode(true);
+    btnDes.replaceWith(newDes);
+    newDes.addEventListener('click', descargarSeleccionadas);
+  }
+
+  wrap.style.display = 'block';
+}
+
+// ─── DESCARGAR SELECCIONADAS EN CARPETA ──────────────────────
+async function descargarSeleccionadas() {
+  const grid = document.getElementById('galeriaGrid');
+  const items = [...grid.querySelectorAll('.galeria-item.selected')];
+  if (!items.length) { mostrarExportStatus('⚠️ Selecciona al menos una imagen', ''); return; }
+
+  const inputEl = document.getElementById('inputNombreCarpeta');
+  const nombreRaw = (inputEl?.value || '').trim();
+  if (!nombreRaw) {
+    if (inputEl) {
+      inputEl.focus();
+      inputEl.style.borderColor = 'var(--red)';
+      setTimeout(() => inputEl.style.borderColor = '', 1500);
+    }
+    mostrarExportStatus('⚠️ Escribe un nombre para la carpeta', '');
+    return;
+  }
+
+  const slug = nombreRaw.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '').slice(0, 60);
+
+  const tabs = await chrome.tabs.query({});
+  const tab = tabs.find(t => t.url && /taobao\.com|tmall\.com|1688\.com/.test(t.url));
+  const sku = tab?.url?.match(/[?&]id=(\d+)/)?.[1] || tab?.url?.match(/\/(\d{8,})/)?.[1] || String(Date.now());
+
+  const carpeta = `BioCattaleya/seleccion/${slug}_${sku}`;
+  mostrarExportStatus(`⏳ Descargando ${items.length} archivo(s)…`, '');
+  let ok = 0, fail = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const el = items[i];
+    const url = el.dataset.url;
+    if (!url) continue;
+
+    const ext = url.split('.').pop().split('?')[0].replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+    const nombre = el.dataset.tipo === 'video'
+      ? `video_1.${ext}`
+      : `imagen_${String(i + 1).padStart(2, '0')}.${ext}`;
+    const filename = `${carpeta}/${nombre}`;
+
+    try {
+      const res = await new Promise(resolve =>
+        chrome.runtime.sendMessage({ action: 'download_image', url, filename }, resolve)
+      );
+      if (res?.ok) { ok++; } else { fail++; }
+    } catch (e) {
+      console.warn('[BSC] descarga fallida:', url, e);
+      fail++;
+    }
+    await new Promise(r => setTimeout(r, 120));
+  }
+
+  mostrarExportStatus(
+    fail === 0 ? `✅ ${ok} archivo(s) → ${carpeta}/` : `⚠️ ${ok} ok · ${fail} fallaron`,
+    fail === 0 ? 'success' : ''
+  );
 }
 
 function renderizarCampos() {
@@ -559,10 +695,14 @@ async function refrescarPreview(tabId) {
   document.getElementById('pvRating').textContent = datos.calificaciones || '—';
   document.getElementById('pvSpecs').textContent = datos.specs?.slice(0, 5).join(' · ') || '—';
   const custom = datos.datos_custom || {};
-  document.getElementById('pvCustom').textContent = Object.keys(custom).length ? Object.entries(custom).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ') : '—';
+  document.getElementById('pvCustom').textContent = Object.keys(custom).length
+    ? Object.entries(custom).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ')
+    : '—';
   const imgs = datos.imagenes || [];
   document.getElementById('imgCount').textContent = imgs.length;
-  document.getElementById('imgPreview').innerHTML = imgs.slice(0, 8).map(url => `<img class="img-thumb" src="${url}" onerror="this.style.display='none'">`).join('');
+  document.getElementById('imgPreview').innerHTML = imgs.slice(0, 8)
+    .map(url => `<img class="img-thumb" src="${url}" onerror="this.style.display='none'">`)
+    .join('');
 }
 
 const esperar = ms => new Promise(r => setTimeout(r, ms));
@@ -574,8 +714,6 @@ function construirFila(datos) {
   const nombreZH = datos.nombre || '';
   const tieneChino = /[\u4e00-\u9fff]/.test(nombreZH);
   const nombreEN = tieneChino ? '(traducir)' : nombreZH;
-  
-  // Extraemos la lista de imágenes para usarlas individualmente
   const imgs = datos.imagenes || [];
 
   const fila = {
@@ -591,7 +729,6 @@ function construirFila(datos) {
     'Calificacion': datos.calificaciones || '',
     'Sitio': datos.sitio || '',
     'URL': datos.url || '',
-    // --- AQUÍ SEPARAMOS LAS IMÁGENES EN COLUMNAS (CAMBIO 3) ---
     'Imagen1': imgs[0] || '',
     'Imagen2': imgs[1] || '',
     'Imagen3': imgs[2] || '',
@@ -600,7 +737,6 @@ function construirFila(datos) {
     'Imagen6': imgs[5] || '',
     'Imagen7': imgs[6] || '',
     'Imagen8': imgs[7] || '',
-    // ---------------------------------------------------------
     'Variantes URLs': (datos.imagenes_variantes || []).join(' | '),
     '本店推荐 JSON': JSON.stringify(datos.tienda_recomendados || []).slice(0, 2000),
     'Imagenes Descripcion': (datos.imagenes_descripcion || []).join(' | '),
@@ -613,6 +749,7 @@ function construirFila(datos) {
   }
   return fila;
 }
+
 async function exportarJSON(tabId) {
   const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
   if (!datos) return;
@@ -641,15 +778,15 @@ async function enviarPython(tabId) {
   const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
   if (!datos) return;
   try {
-    const res = await fetch('https://d0d07aa0-53b9-4fbc-b755-fbd41aa24594-00-zvm7drwlxaqq.spock.replit.dev/', {
+    const res = await fetch('http://localhost:5001/guardar-listado', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
     const json = await res.json();
-    mostrarExportStatus('✅ ' + (json.message || 'Guardado en Excel + media local'), 'success');
+    mostrarExportStatus('✅ ' + (json.message || 'Guardado'), 'success');
   } catch {
-    mostrarExportStatus('❌ Python no responde. ¿Está corriendo receptor_biocattaleya.py?', 'error');
+    mostrarExportStatus('❌ Servidor no responde. ¿Está corriendo node server.js?', 'error');
   }
 }
 
@@ -683,7 +820,7 @@ async function accionCompleta(tabId) {
   await esperar(1000);
   try {
     const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
-    await fetch('https://d0d07aa0-53b9-4fbc-b755-fbd41aa24594-00-zvm7drwlxaqq.spock.replit.dev/', {
+    await fetch('http://localhost:5001/guardar-listado', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
@@ -721,11 +858,15 @@ function mostrarExportStatus(msg, tipo) {
 async function checkPython() {
   const statusEl = document.getElementById('pythonStatus');
   try {
-    await fetch('https://d0d07aa0-53b9-4fbc-b755-fbd41aa24594-00-zvm7drwlxaqq.spock.replit.dev/', { method: 'OPTIONS', signal: AbortSignal.timeout(2500) });
+    await fetch('http://localhost:5001/', { method: 'OPTIONS', signal: AbortSignal.timeout(2500) });
     statusEl.className = 'python-status';
-    statusEl.querySelector('div').innerHTML = '<div style="font-weight:600;font-size:11px;color:var(--green)">Receptor Python</div>' + '<div style="font-size:10px;color:var(--text-dim)">Conectado · localhost:5000</div>';
+    statusEl.querySelector('div').innerHTML =
+      '<div style="font-weight:600;font-size:11px;color:var(--green)">Servidor Monitor</div>' +
+      '<div style="font-size:10px;color:var(--text-dim)">Conectado · localhost:5001</div>';
   } catch {
     statusEl.className = 'python-status offline';
-    statusEl.querySelector('div').innerHTML = '<div style="font-weight:600;font-size:11px;color:var(--red)">Receptor Python</div>' + '<div style="font-size:10px;color:var(--text-dim)">Desconectado – inicia receptor_biocattaleya.py</div>';
+    statusEl.querySelector('div').innerHTML =
+      '<div style="font-weight:600;font-size:11px;color:var(--red)">Servidor Monitor</div>' +
+      '<div style="font-size:10px;color:var(--text-dim)">Desconectado – ejecuta node server.js</div>';
   }
 }
