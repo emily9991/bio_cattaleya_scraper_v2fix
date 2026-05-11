@@ -639,7 +639,6 @@
   </div>
 
   <!-- Paso 3: Media -->
-  <!-- Paso 3: Media -->
   <div class="section-card">
     <div class="section-header" id="hdr3">
       <span class="section-icon">📸</span>
@@ -656,9 +655,18 @@
           <span class="galeria-count"><span id="galeriaSelCount">0</span> sel.</span>
         </div>
         <div class="galeria-grid" id="galeriaGrid"></div>
-        <div class="btn-row" style="margin-top:8px">
-          <button class="btn btn-green" id="btnDescargarSel" style="font-size:11px">⬇ Descargar sel.</button>
-          <button class="btn btn-secondary" id="btnNotionSel" style="font-size:11px">🗃 → Notion</button>
+        <div style="margin-top:8px">
+          <input
+            class="input-field"
+            type="text"
+            id="inputNombreCarpeta"
+            placeholder="nombre de carpeta (ej: vestido_floral_verano)"
+            style="width:100%;margin-bottom:6px"
+          />
+          <div class="btn-row">
+            <button class="btn btn-green" id="btnDescargarSel" style="font-size:11px">⬇ Descargar sel.</button>
+            <button class="btn btn-secondary" id="btnNotionSel" style="font-size:11px">🗃 → Notion</button>
+          </div>
         </div>
       </div>
     </div>

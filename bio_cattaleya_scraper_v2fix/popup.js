@@ -2,10 +2,6 @@
 // BIO CATTALEYA SCRAPER PRO v4.0 — POPUP CONTROLLER
 // ============================================================
 
-/** Receptor Python local (receptor_biocattaleya.py) */
-const RECEPTOR_LOCAL = CONFIG.PYTHON_SERVER;
-const RECEPTOR_GUARDAR_URL = RECEPTOR_LOCAL + '/guardar_completo';
-
 let camposDefinidos = {}; // { nombre: { selector, tipo } }
 let esperandoSelector = false;
 let campoEnEspera = null;
@@ -127,28 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tab = await getActiveTab();
     if (!tab?.id) return;
     await ejecutarAccion('get_media', 'badge3', 'result3', tab.id);
-    const datos = await enviarMensaje(tab.id, { action: 'get_all_data' });
-    console.log('[BSC] imagenes:', datos?.imagenes?.length, datos?.imagenes?.[0]);
-    renderizarGaleria(datos);
   });
-
- const _btnSelAll = document.getElementById('btnSelAll');
-if (_btnSelAll) _btnSelAll.addEventListener('click', () => {
-  document.querySelectorAll('.galeria-item').forEach(el => el.classList.add('selected'));
-  actualizarContadorGaleria();
-});
-const _btnSelNone = document.getElementById('btnSelNone');
-if (_btnSelNone) _btnSelNone.addEventListener('click', () => {
-  document.querySelectorAll('.galeria-item').forEach(el => el.classList.remove('selected'));
-  actualizarContadorGaleria();
-});
-const _btnDescargarSel = document.getElementById('btnDescargarSel');
-if (_btnDescargarSel) _btnDescargarSel.addEventListener('click', descargarSeleccionadas);
-const _btnNotionSel = document.getElementById('btnNotionSel');
-if (_btnNotionSel) _btnNotionSel.addEventListener('click', () => {
-  mostrarExportStatus('⏳ Notion sync — próximamente', '');
-  cambiarTab('export');
-});
 
   document.getElementById('btnPagination').addEventListener('click', async () => {
     const tab = await getActiveTab();
@@ -237,22 +212,9 @@ if (_btnNotionSel) _btnNotionSel.addEventListener('click', () => {
   document.getElementById('btnExportAll').addEventListener('click', async () => {
     const tab = await getActiveTab();
     if (!tab?.id) return;
-
-    chrome.tabs.sendMessage(tab.id, { action: 'get_all_data' }, async (datos) => {
-      if (chrome.runtime.lastError) {
-        console.warn('[BSC] content script no disponible:', chrome.runtime.lastError.message);
-        await exportarJSON(tab.id);
-        await exportarCSV(tab.id);
-        mostrarExportStatus('✅ JSON y CSV descargados', 'success');
-        return;
-      }
-      if (!datos || !datos.nombre) {
-        mostrarExportStatus('⚠️ Primero escanea el producto', 'warning');
-        return;
-      }
-      await descargarPaqueteCompleto(datos);
-      mostrarExportStatus('✅ Paquete completo descargando...', 'success');
-    });
+    await exportarJSON(tab.id);
+    await exportarCSV(tab.id);
+    mostrarExportStatus('✅ JSON y CSV descargados', 'success');
   });
   document.getElementById('btnCheckPython').addEventListener('click', () => checkPython());
   document.getElementById('btnExportMain').addEventListener('click', async () => {
@@ -260,56 +222,6 @@ if (_btnNotionSel) _btnNotionSel.addEventListener('click', () => {
     if (!tab?.id) return;
     accionCompleta(tab.id);
   });
-
-  // Mejora #4: listing
-  (function() {
-    var elCount   = document.getElementById('listingCount');
-    var elExport  = document.getElementById('btnExportListado');
-    var elClear   = document.getElementById('btnClearListado');
-    if (!elExport || !elClear) return;
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'get_listing_data' },
-        function(resp) {
-          if (resp && resp.total > 0) {
-            if (elCount)  elCount.textContent          = resp.total;
-            elExport.style.display = 'inline-block';
-            elClear.style.display  = 'inline-block';
-          }
-        }
-      );
-    });
-  })();
-
-  var btnExportListado = document.getElementById('btnExportListado');
-  if (btnExportListado) {
-    btnExportListado.addEventListener('click', function() {
-      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'get_listing_data' },
-          function(resp) {
-            if (resp) exportarCSVListado(resp.items);
-          }
-        );
-      });
-    });
-  }
-
-  var btnClearListado = document.getElementById('btnClearListado');
-  if (btnClearListado) {
-    btnClearListado.addEventListener('click', function() {
-      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'clear_listing' }, function() {
-          chrome.tabs.sendMessage(tabs[0].id, { action: 'start_listing_observer' }, function() {
-            var elCount  = document.getElementById('listingCount');
-            var elExport = document.getElementById('btnExportListado');
-            var elClear  = document.getElementById('btnClearListado');
-            if (elCount)  elCount.textContent      = '0';
-            if (elExport) elExport.style.display   = 'none';
-            if (elClear)  elClear.style.display    = 'none';
-          });
-        });
-      });
-    });
-  }
 
   checkPython();
 
@@ -561,48 +473,29 @@ async function enviarMensaje(tabId, mensaje) {
   });
 }
 
-// ─── SANITIZACIÓN UTF-8 ──────────────────────────────────────
-// FIX: Repara mojibake (chino UTF-8 leído como Latin-1)
-// Síntoma: å­¦é™¢é£Ž → 学院风
-function sanitizarTextoChino(str) {
-  if (!str || typeof str !== 'string') return str || '';
-  try {
-    // Detectar mojibake de 2 bytes (Latin/símbolos) Y 3 bytes (chino CJK)
-    if (/[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF][\x80-\xBF]/.test(str)) {
-      var bytes = new Uint8Array(str.split('').map(function(c) {
-        return c.charCodeAt(0) & 0xFF;
-      }));
-      return new TextDecoder('utf-8').decode(bytes);
-    }
-  } catch(e) {}
-  return str;
-}
-
 function exportarListadoCSV() {
-  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-    if (!tabs[0]?.id) return;
-    chrome.tabs.sendMessage(tabs[0].id, { action: 'get_all_data' }, function(datos) {
-      if (chrome.runtime.lastError || !datos || !datos.listado?.length) {
-        mostrarExportStatus('⚠️ No hay productos en el listado', 'warning');
-        return;
-      }
-      var wb = XLSX.utils.book_new();
-      var filas = datos.listado.map(function(item) {
-        return {
-          'Nombre':    item.nombre || item.titulo || '',
-          'Precio CNY': item.precio || '',
-          'URL':       item.url    || '',
-          'Imagen':    item.imagen || '',
-          'Tienda':    item.tienda || '',
-        };
-      });
-      var ws = XLSX.utils.json_to_sheet(filas);
-      XLSX.utils.book_append_sheet(wb, ws, 'Listado');
-      var ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
-      XLSX.writeFile(wb, 'BioCattaleya_listado_' + ts + '.xlsx');
-      mostrarExportStatus('✅ Excel descargado', 'success');
-    });
-  });
+  const rows = ultimoListado.length ? ultimoListado : [];
+  if (rows.length === 0) {
+    const lr = document.getElementById('listingDetectResult');
+    if (lr) {
+      lr.textContent = 'Primero pulsa «Escanear productos del listado».';
+      lr.className = 'section-result error';
+    }
+    return;
+  }
+  const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const SEP = ';';
+  const header = ['Nombre', 'Precio (CNY)', 'Compradores', 'URL', 'Imagen'].map(h => '"' + h + '"').join(SEP);
+  const lines = rows.map((r) => [r.nombre, r.precio, r.compradores, r.url, r.imagen].map(esc).join(SEP));
+  const csv = '\uFEFF' + 'sep=' + SEP + '\n' + header + '\n' + lines.join('\n');
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  descargarArchivo(csv, 'BioCattaleya_listado_' + ts + '.csv', 'text/csv;charset=utf-8;');
+  const lr = document.getElementById('listingDetectResult');
+  if (lr) {
+    lr.textContent = '✅ CSV descargado (' + rows.length + ' filas)';
+    lr.className = 'section-result success';
+  }
+  setStatus('Listado exportado');
 }
 
 async function ejecutarAccion(action, badgeId, resultId, tabId) {
@@ -674,146 +567,73 @@ async function refrescarPreview(tabId) {
 
 const esperar = ms => new Promise(r => setTimeout(r, ms));
 
-function construirVariaciones(dimensiones) {
-  return dimensiones.map(function(dim) {
-    var valores = dim.valores.map(function(v) { return v.nombre; }).join('|');
-    return dim.nombre + ': ' + valores;
-  }).join(' || ').slice(0, 4000);
-}
-
-function construirImagenesColor(imagenesPorColor) {
-  return Object.entries(imagenesPorColor).map(function([color, url]) {
-    return color + '::' + url;
-  }).join(' | ').slice(0, 8000);
-}
-
-// Mejora #4: listing export
-function exportarCSVListado(items) {
-  if (!items || !items.length) return;
-  var wb = XLSX.utils.book_new();
-  var filas = items.map(function(item) {
-    return {
-      'Nombre':     item.nombre || item.titulo || '',
-      'Precio CNY': item.precio || '',
-      'URL':        item.url    || '',
-      'Imagen':     item.imagen || '',
-      'Tienda':     item.tienda || '',
-    };
-  });
-  var ws = XLSX.utils.json_to_sheet(filas);
-  XLSX.utils.book_append_sheet(wb, ws, 'Listado');
-  var ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
-  XLSX.writeFile(wb, 'BioCattaleya_listado_' + ts + '.xlsx');
-}
-
 function construirFila(datos) {
   const precioCNY = parseFloat(datos.precio) || 0;
   const precioUSD = precioCNY > 0 ? (precioCNY / 7.25).toFixed(2) : '';
   const precioVenta = precioCNY > 0 ? (precioCNY / 7.25 * 2.5).toFixed(2) : '';
-  // FIX #2: sanitizar nombre del producto en ficha individual
-  const nombreZH = sanitizarTextoChino(datos.nombre || '');
+  const nombreZH = datos.nombre || '';
   const tieneChino = /[\u4e00-\u9fff]/.test(nombreZH);
   const nombreEN = tieneChino ? '(traducir)' : nombreZH;
+  
+  // Extraemos la lista de imágenes para usarlas individualmente
   const imgs = datos.imagenes || [];
-  var specParts = [];
-
-  Object.keys(datos).forEach(function(key) {
-    if (key.startsWith('CUSTOM_')) {
-      specParts.push(key.replace('CUSTOM_', '') + ': ' + datos[key]);
-    }
-  });
-
-  if (datos.parametros && typeof datos.parametros === 'object') {
-    Object.entries(datos.parametros).forEach(function([k, v]) {
-      if (k && v) specParts.push(k + ': ' + v);
-    });
-  }
-
-  let paramStr = '';
-  if (datos.parametros_texto) {
-    paramStr = datos.parametros_texto.slice(0, 8000);
-  } else if (Array.isArray(datos.parametros)) {
-    paramStr = datos.parametros
-      .filter(p => p && typeof p === 'string')
-      .map(p => {
-        const clean = p.replace(/\s+/g, ' ').trim();
-        if (clean.includes(':') && !clean.match(/^\s*:/)) {
-          return clean;
-        }
-        return clean;
-      })
-      .join(' | ')
-      .slice(0, 8000);
-  }
-
-  const customStr = Object.entries(datos.datos_custom || {}).map(([k,v]) => k + ': ' + (Array.isArray(v) ? v.join(', ') : String(v||''))).join(' | ');
-  const productSpecs = specParts.length > 0
-    ? specParts.join(' | ').slice(0, 8000)
-    : [paramStr, customStr].filter(Boolean).join(' | ').slice(0, 8000);
 
   const fila = {
-    'Store': datos.tienda || '',
-    'Product Name (ZH)': nombreZH,
-    'Product Name (EN)': nombreEN,
-    'Description': (datos.descripcion || '').replace(/[\n\r]+/g, ' ').slice(0, 4000) || 'Image type description',
-    'Product Specifications': productSpecs,
-    'Variations': construirVariaciones(datos.variantes || []),
-    'Color Images': construirImagenesColor(datos.imagenesPorColor || {}),
-    'Cost CNY': datos.precio || '',
-    'Cost USD': precioUSD,
-    'Sale Price USD': precioVenta,
-    'Rating': datos.calificaciones || '',
-    'Site': datos.sitio || '',
+    'Tienda': datos.tienda || '',
+    'Nombre (ZH)': nombreZH,
+    'Nombre (EN)': nombreEN,
+    'Descripcion': (datos.descripcion || '').replace(/[\n\r]+/g, ' ').slice(0, 400),
+    'Specs': (datos.specs || []).join(' | '),
+    'Variaciones': (datos.variaciones || []).join(' | '),
+    'Costo CNY': datos.precio || '',
+    'Costo USD': precioUSD,
+    'Precio Venta USD': precioVenta,
+    'Calificacion': datos.calificaciones || '',
+    'Sitio': datos.sitio || '',
     'URL': datos.url || '',
-    'Category': datos.categoria_notion || '',
-    'Gallery URLs (Notion)': datos.imagenes_galeria_notion || '',
-    'Cover Image': imgs[0] || '',
-    'Image1': imgs[0] || '',
-    'Image2': imgs[1] || '',
-    'Image3': imgs[2] || '',
-    'Image4': imgs[3] || '',
-    'Image5': imgs[4] || '',
-    'Image6': imgs[5] || '',
-    'Image7': imgs[6] || '',
-    'Image8': imgs[7] || '',
-    'Variant Image URLs': (datos.imagenes_variantes || []).join(' | '),
-    'Store Recommended (JSON)': JSON.stringify(datos.tienda_recomendados || []).slice(0, 2000),
-    'Desc Image1': (datos.imagenes_descripcion || [])[0] || '',
-    'Desc Image2': (datos.imagenes_descripcion || [])[1] || '',
-    'Desc Image3': (datos.imagenes_descripcion || [])[2] || '',
-    'Video URL': datos.video || '',
-    'Date': new Date().toLocaleString('es-CO'),
+    // --- AQUÍ SEPARAMOS LAS IMÁGENES EN COLUMNAS (CAMBIO 3) ---
+    'Imagen1': imgs[0] || '',
+    'Imagen2': imgs[1] || '',
+    'Imagen3': imgs[2] || '',
+    'Imagen4': imgs[3] || '',
+    'Imagen5': imgs[4] || '',
+    'Imagen6': imgs[5] || '',
+    'Imagen7': imgs[6] || '',
+    'Imagen8': imgs[7] || '',
+    // ---------------------------------------------------------
+    'Variantes URLs': (datos.imagenes_variantes || []).join(' | '),
+    '本店推荐 JSON': JSON.stringify(datos.tienda_recomendados || []).slice(0, 2000),
+    'Imagenes Descripcion': (datos.imagenes_descripcion || []).join(' | '),
+    'Video': datos.video || '',
+    'Fecha': new Date().toLocaleString('es-CO'),
   };
+
+  for (const [k, v] of Object.entries(datos.datos_custom || {})) {
+    fila['CUSTOM_' + k] = Array.isArray(v) ? v.join(' | ') : String(v || '');
+  }
   return fila;
 }
-
 async function exportarJSON(tabId) {
   const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
   if (!datos) return;
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const nombre = 'BioCattaleya_' + (datos.sitio || 'producto') + '_' + ts + '.json';
-  descargarArchivo(nombre, JSON.stringify(datos, null, 2));
+  descargarArchivo(JSON.stringify(datos, null, 2), nombre, 'application/json');
   mostrarExportStatus('✅ JSON descargado: ' + nombre, 'success');
 }
 
 async function exportarCSV(tabId) {
-  chrome.tabs.sendMessage(tabId, { action: 'get_all_data' }, function(datos) {
-    if (chrome.runtime.lastError || !datos) return;
-    var wb = XLSX.utils.book_new();
-    var fila = {
-      'Tienda':        datos.tienda        || '',
-      'Nombre (ZH)':   datos.nombre        || '',
-      'Precio CNY':    datos.precio        || '',
-      'Calificacion':  datos.calificaciones|| '',
-      'Ventas':        datos.ventas        || '',
-      'Sitio':         datos.sitio         || '',
-      'URL':           datos.url           || '',
-    };
-    var ws = XLSX.utils.json_to_sheet([fila]);
-    XLSX.utils.book_append_sheet(wb, ws, 'Producto');
-    var ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
-    XLSX.writeFile(wb, 'BioCattaleya_' + ts + '.xlsx');
-  });
+  const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
+  if (!datos) return;
+  const fila = construirFila(datos);
+  const escapar = v => '"' + String(v || '').replace(/"/g, '""').replace(/\n/g, ' ') + '"';
+  const SEP = ';';
+  const headers = Object.keys(fila).map(h => '"' + h + '"').join(SEP);
+  const values = Object.values(fila).map(escapar).join(SEP);
+  const csv = '\uFEFF' + 'sep=' + SEP + '\n' + headers + '\n' + values;
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  descargarArchivo(csv, 'BioCattaleya_' + ts + '.csv', 'text/csv;charset=utf-8;');
+  mostrarExportStatus('✅ CSV descargado con columnas organizadas', 'success');
 }
 
 async function enviarPython(tabId) {
@@ -821,19 +641,15 @@ async function enviarPython(tabId) {
   const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
   if (!datos) return;
   try {
-    const res = await fetch(RECEPTOR_GUARDAR_URL, {
+    const res = await fetch('https://d0d07aa0-53b9-4fbc-b755-fbd41aa24594-00-zvm7drwlxaqq.spock.replit.dev/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      mostrarExportStatus('❌ ' + (json.message || res.statusText || 'Error del receptor'), 'error');
-      return;
-    }
-    mostrarExportStatus('✅ ' + (json.message || 'Guardado en C:\\taobao_scraper'), 'success');
+    const json = await res.json();
+    mostrarExportStatus('✅ ' + (json.message || 'Guardado en Excel + media local'), 'success');
   } catch {
-    mostrarExportStatus('❌ Receptor local inactivo. Ejecuta: python receptor_biocattaleya.py (puerto 5000)', 'error');
+    mostrarExportStatus('❌ Python no responde. ¿Está corriendo receptor_biocattaleya.py?', 'error');
   }
 }
 
@@ -867,18 +683,12 @@ async function accionCompleta(tabId) {
   await esperar(1000);
   try {
     const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
-    const r = await fetch(RECEPTOR_GUARDAR_URL, {
+    await fetch('https://d0d07aa0-53b9-4fbc-b755-fbd41aa24594-00-zvm7drwlxaqq.spock.replit.dev/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
     });
-    const j = await r.json().catch(() => ({}));
-    if (j.notion_page_url) {
-      setStatus('Local + Notion OK');
-    } else if (j.notion_message && String(j.notion_message).indexOf('no configurado') >= 0) {
-      setStatus('Local OK · Notion sin .env');
-    }
-  } catch (_) {}
+  } catch {}
   btn.textContent = '✅ ¡TODO EXPORTADO!';
   btn.style.background = 'linear-gradient(135deg,#00b37d,#006b4a)';
   setStatus('¡Listo!');
@@ -890,34 +700,15 @@ async function accionCompleta(tabId) {
   }, 5000);
 }
 
-function descargarArchivo(filename, content, tipo) {
-  var blob;
-  if (content instanceof Uint8Array || content instanceof ArrayBuffer) {
-    blob = new Blob([content], { type: tipo || 'application/octet-stream' });
-  } else if (typeof content === 'string' && tipo === 'xlsx') {
-    var buf = new ArrayBuffer(content.length);
-    var view = new Uint8Array(buf);
-    for (var i = 0; i < content.length; i++) {
-      view[i] = content.charCodeAt(i) & 0xFF;
-    }
-    blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  } else {
-    var encoder = new TextEncoder();
-    var bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    var encoded = encoder.encode(content);
-    var merged = new Uint8Array(bom.length + encoded.length);
-    merged.set(bom, 0);
-    merged.set(encoded, bom.length);
-    blob = new Blob([merged], { type: tipo || 'text/csv;charset=utf-8' });
-  }
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
+function descargarArchivo(contenido, nombre, tipo) {
+  const blob = new Blob([contenido], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
 function mostrarExportStatus(msg, tipo) {
@@ -929,353 +720,12 @@ function mostrarExportStatus(msg, tipo) {
 
 async function checkPython() {
   const statusEl = document.getElementById('pythonStatus');
-  if (!statusEl) return;
-  const inner = statusEl.querySelector('.dot-py + div') || statusEl.children[1];
-  if (!inner) return;
   try {
-    const res = await fetch(RECEPTOR_LOCAL + '/stats', {
-      method: 'GET',
-      cache: 'no-store',
-      signal: AbortSignal.timeout(8000)
-    });
-    const j = await res.json().catch(() => ({}));
+    await fetch('https://d0d07aa0-53b9-4fbc-b755-fbd41aa24594-00-zvm7drwlxaqq.spock.replit.dev/', { method: 'OPTIONS', signal: AbortSignal.timeout(2500) });
     statusEl.className = 'python-status';
-    inner.innerHTML =
-      '<div style="font-weight:600;font-size:11px;color:var(--green)">Receptor local</div>' +
-      '<div style="font-size:10px;color:var(--text-dim)">127.0.0.1:5000 · ' + (j.total != null ? j.total + ' filas maestro' : 'OK') + '</div>';
+    statusEl.querySelector('div').innerHTML = '<div style="font-weight:600;font-size:11px;color:var(--green)">Receptor Python</div>' + '<div style="font-size:10px;color:var(--text-dim)">Conectado · localhost:5000</div>';
   } catch {
     statusEl.className = 'python-status offline';
-    inner.innerHTML =
-      '<div style="font-weight:600;font-size:11px;color:var(--red)">Receptor local</div>' +
-      '<div style="font-size:10px;color:var(--text-dim)">Sin respuesta · python receptor_biocattaleya.py</div>';
+    statusEl.querySelector('div').innerHTML = '<div style="font-weight:600;font-size:11px;color:var(--red)">Receptor Python</div>' + '<div style="font-size:10px;color:var(--text-dim)">Desconectado – inicia receptor_biocattaleya.py</div>';
   }
-}
-
-// ─── MEJORA #5: PRODUCTOS_BSC CARPETAS JERÁRQUICAS ──────────────────────────
-
-function getSlug(hostname) {
-  return hostname
-    .replace(/\.(com|cn|net|org)(\.cn)?$/, '')
-    .replace(/\./g, '-');
-}
-
-document.getElementById('btnGuardarListado').addEventListener('click', async () => {
-  const btn = document.getElementById('btnGuardarListado');
-  const statusEl = document.getElementById('exportStatus');
-  const excelBtn = document.getElementById('btnExportExcel');
-
-  try {
-    const listado = await obtenerListadoActual();
-
-    if (!listado || listado.length === 0) {
-      statusEl.textContent = '❌ No hay datos para guardar. Por favor, extrae productos primero.';
-      statusEl.className = 'section-result error';
-      statusEl.style.display = 'block';
-      return;
-    }
-
-    const tab = await getActiveTab();
-    const url = new URL(tab.url);
-    const slug = getSlug(url.hostname);
-    const fecha = new Date().toISOString().slice(0, 10);
-
-    btn.disabled = true;
-    btn.textContent = '💾 Guardando...';
-    statusEl.style.display = 'block';
-    statusEl.textContent = '⏳ Guardando listado...';
-    statusEl.className = 'section-result';
-
-    const response = await chrome.runtime.sendMessage({
-      action: 'guardar_listado',
-      payload: { slug, fecha, items: listado }
-    });
-
-    if (response.ok) {
-      statusEl.textContent = `✅ Guardado en: ${response.path}`;
-      statusEl.className = 'section-result success';
-      excelBtn.style.display = 'block';
-      window.ultimoGuardado = { slug, fecha };
-      if (document.getElementById('toggleDescargarImagenes').checked) {
-        await descargarImagenes(listado, slug, fecha);
-      }
-    } else {
-      statusEl.textContent = `❌ Error: ${response.error}`;
-      statusEl.className = 'section-result error';
-    }
-
-  } catch (error) {
-    console.error('Error al guardar listado:', error);
-    statusEl.textContent = `❌ Error: ${error.message}`;
-    statusEl.className = 'section-result error';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '💾 Guardar listado';
-  }
-});
-
-document.getElementById('btnExportExcel').addEventListener('click', async () => {
-  const btn = document.getElementById('btnExportExcel');
-  const statusEl = document.getElementById('exportStatus');
-
-  if (!window.ultimoGuardado) {
-    statusEl.textContent = '❌ Debes guardar el listado primero';
-    statusEl.className = 'section-result error';
-    statusEl.style.display = 'block';
-    return;
-  }
-
-  try {
-    btn.disabled = true;
-    btn.textContent = '📊 Exportando...';
-    statusEl.style.display = 'block';
-    statusEl.textContent = '⏳ Exportando a Excel...';
-    statusEl.className = 'section-result';
-
-    const response = await fetch('http://localhost:5001/exportar-excel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: window.ultimoGuardado.slug, fecha: window.ultimoGuardado.fecha })
-    });
-
-    const result = await response.json();
-
-    if (result.ok) {
-      statusEl.textContent = `✅ Excel exportado: ${result.path}`;
-      statusEl.className = 'section-result success';
-    } else {
-      statusEl.textContent = `❌ Error: ${result.error}`;
-      statusEl.className = 'section-result error';
-    }
-
-  } catch (error) {
-    console.error('Error al exportar Excel:', error);
-    statusEl.textContent = `❌ Error: ${error.message}`;
-    statusEl.className = 'section-result error';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '📊 Exportar Excel';
-  }
-});
-
-document.getElementById('toggleDescargarImagenes').addEventListener('change', async (e) => {
-  if (e.target.checked && window.ultimoGuardado) {
-    const listado = await obtenerListadoActual();
-    if (listado && listado.length > 0) {
-      await descargarImagenes(listado, window.ultimoGuardado.slug, window.ultimoGuardado.fecha);
-    }
-  }
-});
-
-async function obtenerListadoActual() {
-  try {
-    const tab = await getActiveTab();
-    const response = await enviarMensaje(tab.id, { action: 'get_all_data' });
-
-    if (response && response.data) {
-      if (response.data.listado && response.data.listado.length > 0) {
-        return response.data.listado.map(item => ({
-          itemId: item.itemId || item.id || '',
-          title: item.nombre || item.title || '',
-          url: item.url || '',
-          price: item.precio || item.price || '',
-          image: item.imagen || item.image || '',
-          source: item.tienda || item.source || ''
-        }));
-      }
-      if (response.data.ficha) {
-        const ficha = response.data.ficha;
-        return [{
-          itemId: ficha.itemId || '',
-          title: ficha.nombre || '',
-          url: ficha.url || '',
-          price: ficha.precio || '',
-          image: ficha.imagen || '',
-          source: ficha.tienda || ''
-        }];
-      }
-    }
-    return [];
-  } catch (error) {
-    console.error('Error al obtener datos:', error);
-    return [];
-  }
-}
-
-async function descargarImagenes(items, slug, fecha) {
-  const progresoEl = document.getElementById('descargaProgreso');
-
-  try {
-    progresoEl.style.display = 'block';
-    progresoEl.className = 'section-result';
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.image && item.itemId) {
-        progresoEl.textContent = `Descargando imagen ${i + 1}/${items.length}: ${item.itemId}.jpg`;
-        await chrome.runtime.sendMessage({
-          action: 'descargar_archivo',
-          url: item.image,
-          filename: `Productos_BSC/${slug}/${fecha}/imagenes/${item.itemId}.jpg`
-        });
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-
-    progresoEl.textContent = `✅ ${items.length} imágenes descargadas`;
-    progresoEl.className = 'section-result success';
-
-  } catch (error) {
-    console.error('Error descargando imágenes:', error);
-    progresoEl.textContent = `❌ Error descargando imágenes: ${error.message}`;
-    progresoEl.className = 'section-result error';
-  }
-}
-// ============================================================
-// DESCARGA PAQUETE COMPLETO — carpeta con img/, videos/, CSV, JSON
-// ============================================================
-async function descargarPaqueteCompleto(datos) {
-  var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  var nombreProducto = (datos.nombre || 'producto')
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-    .slice(0, 40)
-    .trim();
-  var skuId = (datos.url || '').match(/id=(\d+)/)?.[1] || 'producto';
-  var carpeta = 'BioCattaleya/' + skuId + '_' + ts;
-
-  // 1. JSON
-  var jsonStr = JSON.stringify(datos, null, 2);
-  var jsonBlob = new Blob([jsonStr], { type: 'application/json' });
-  var jsonUrl = URL.createObjectURL(jsonBlob);
-  chrome.downloads.download({
-    url: jsonUrl,
-    filename: carpeta + '/datos.json',
-    conflictAction: 'overwrite'
-  });
-
-  // 2. XLSX del producto
-  var wb = XLSX.utils.book_new();
-  var fila = {
-    'SKU':           (datos.url || '').match(/id=(\d+)/)?.[1] || '',
-    'Nombre (ZH)':   datos.nombre    || '',
-    'Nombre (EN)':   '',
-    'Tienda':        datos.tienda    || '',
-    'Precio CNY':    datos.precio    || '',
-    'Precio USD':    '',
-    'Calificacion':  datos.calificaciones || '',
-    'Ventas':        datos.ventas    || '',
-    'Descripcion':   datos.descripcion || '',
-    'Specs':         (datos.specs || []).join(' | '),
-    'Sitio':         datos.sitio     || '',
-    'URL':           datos.url       || '',
-  };
-  var ws = XLSX.utils.json_to_sheet([fila]);
-  XLSX.utils.book_append_sheet(wb, ws, 'Producto');
-  var xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-  var ts2 = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
-  var skuId2 = (datos.url || '').match(/id=(\d+)/)?.[1] || 'producto';
-  descargarArchivo('BioCattaleya_' + skuId2 + '_' + ts2 + '.xlsx', xlsxBuffer, 'xlsx');
-
-  // 3. Imágenes
-  var imagenes = datos.imagenes || [];
-  imagenes.forEach(function(imgUrl, i) {
-    if (!imgUrl) return;
-    var ext = imgUrl.split('.').pop().split('?')[0] || 'jpg';
-    // limpiar extensiones dobles tipo .jpg_.webp
-    ext = ext.replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
-    chrome.downloads.download({
-      url: imgUrl,
-      filename: carpeta + '/img/imagen_' + (i + 1) + '.' + ext,
-      conflictAction: 'overwrite'
-    });
-  });
-
-  // 4. Video
-  if (datos.video && datos.video.trim() !== '') {
-    var vidExt = datos.video.split('.').pop().split('?')[0] || 'mp4';
-    chrome.downloads.download({
-      url: datos.video,
-      filename: carpeta + '/videos/video_1.' + vidExt,
-      conflictAction: 'overwrite'
-    });
-  }
-
-  console.log('[BSC] Paquete descargando en Downloads/' + carpeta);
-}
-
-// Construye CSV desde el objeto de datos del producto
-function construirCSVDesdeJSON(datos) {
-  var SEP = ',';
-  var esc = function(v) {
-    var s = (v == null ? '' : String(v)).replace(/"/g, '""');
-    return '"' + s + '"';
-  };
-  var header = ['Nombre','Precio','Tienda','Calificaciones','Ventas','URL','Sitio'].join(SEP);
-  var fila = [
-    datos.nombre || '',
-    datos.precio || '',
-    datos.tienda || '',
-    datos.calificaciones || datos.rating || '',
-    datos.ventas || '',
-    datos.url || '',
-    datos.sitio || ''
-  ].map(esc).join(SEP);
-  return header + '\n' + fila;
-}
-function renderizarGaleria(datos) {
-  if (!datos) return;
-  const imgs = datos.imagenes || [];
-  const video = datos.video || null;
-  const grid = document.getElementById('galeriaGrid');
-  const wrap = document.getElementById('galeriaMedia');
-  if (!grid || !wrap) return;
-  if (!imgs.length && !video) return;
-
-  const items = [...imgs.map(url => ({ url, tipo: 'img' }))];
-  if (video) items.push({ url: video, tipo: 'video' });
-
-  grid.innerHTML = items.map((item, i) => {
-    const badge = item.tipo === 'video' ? `<span class="galeria-video-badge">▶ VIDEO</span>` : '';
-    return `<div class="galeria-item selected" data-url="${item.url}" data-tipo="${item.tipo}" data-idx="${i}">
-      <div class="chk">✓</div>
-      <img src="${item.url}">
-      ${badge}
-    </div>`;
-  }).join('');
-  grid.querySelectorAll('.galeria-item img').forEach(img => {
-    const url = img.getAttribute('src');
-    if (!url) return;
-    img.src = '';
-    chrome.runtime.sendMessage({ action: 'fetch_image_b64', url }, res => {
-      if (res && res.b64) img.src = res.b64;
-    });
-  });
-
-  grid.querySelectorAll('.galeria-item').forEach(el => {
-    el.addEventListener('click', () => {
-      el.classList.toggle('selected');
-      actualizarContadorGaleria();
-    });
-  });
-
-  actualizarContadorGaleria();
-  wrap.style.display = 'block';
-}
-
-function actualizarContadorGaleria() {
-  const sel = document.querySelectorAll('.galeria-item.selected').length;
-  const el = document.getElementById('galeriaSelCount');
-  if (el) el.textContent = sel;
-}
-
-function descargarSeleccionadas() {
-  const items = [...document.querySelectorAll('.galeria-item.selected')];
-  if (!items.length) { mostrarExportStatus('⚠️ Selecciona al menos una imagen', ''); return; }
-  items.forEach((el, i) => {
-    const url = el.dataset.url;
-    if (!url) return;
-    const ext = url.split('.').pop().split('?')[0].replace(/[^a-zA-Z0-9]/g,'') || 'jpg';
-    const nombre = el.dataset.tipo === 'video' ? `video_1.${ext}` : `imagen_${i+1}.${ext}`;
-    chrome.downloads.download({ url, filename: 'BioCattaleya/seleccion/' + nombre, conflictAction: 'overwrite' });
-  });
-  mostrarExportStatus(`✅ Descargando ${items.length} archivo(s)`, 'success');
 }
