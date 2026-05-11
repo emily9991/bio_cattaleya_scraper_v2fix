@@ -1267,68 +1267,15 @@ function actualizarContadorGaleria() {
   if (el) el.textContent = sel;
 }
 
-async function descargarSeleccionadas() {
+function descargarSeleccionadas() {
   const items = [...document.querySelectorAll('.galeria-item.selected')];
-  if (!items.length) {
-    mostrarExportStatus('⚠️ Selecciona al menos una imagen', '');
-    return;
-  }
-
-  mostrarExportStatus(`⏳ Descargando ${items.length} archivo(s)…`, '');
-  let ok = 0, fail = 0;
-
-  for (let i = 0; i < items.length; i++) {
-    const el = items[i];
+  if (!items.length) { mostrarExportStatus('⚠️ Selecciona al menos una imagen', ''); return; }
+  items.forEach((el, i) => {
     const url = el.dataset.url;
-    if (!url) continue;
-
-    const ext = url.split('.').pop().split('?')[0].replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
-    const nombre = el.dataset.tipo === 'video'
-      ? `video_1.${ext}`
-      : `imagen_${i + 1}.${ext}`;
-
-    try {
-      // Pedir el base64 al proxy (igual que para renderizar)
-      const res = await new Promise(resolve =>
-        chrome.runtime.sendMessage({ action: 'fetch_image_b64', url }, resolve)
-      );
-
-      if (!res?.b64) {
-        fail++;
-        continue;
-      }
-
-      // Convertir base64 → blob URL
-      const byteStr = atob(res.b64.split(',')[1] ?? res.b64);
-      const arr = new Uint8Array(byteStr.length);
-      for (let j = 0; j < byteStr.length; j++) arr[j] = byteStr.charCodeAt(j);
-      const mime = res.b64.split(';')[0].split(':')[1] ?? 'image/jpeg';
-      const blobUrl = URL.createObjectURL(new Blob([arr], { type: mime }));
-
-      await new Promise((resolve, reject) =>
-        chrome.downloads.download(
-          { url: blobUrl, filename: `BioCattaleya/seleccion/${nombre}`, conflictAction: 'overwrite' },
-          id => {
-            URL.revokeObjectURL(blobUrl);   // limpiar inmediatamente
-            id ? resolve() : reject(chrome.runtime.lastError);
-          }
-        )
-      );
-      ok++;
-
-    } catch (e) {
-      console.warn('[BSC] descarga fallida:', url, e);
-      fail++;
-    }
-
-    // Pequeña pausa para no saturar el background
-    await new Promise(r => setTimeout(r, 120));
-  }
-
-  mostrarExportStatus(
-    fail === 0
-      ? `✅ ${ok} archivo(s) descargados`
-      : `⚠️ ${ok} ok · ${fail} fallaron`,
-    fail === 0 ? 'success' : ''
-  );
+    if (!url) return;
+    const ext = url.split('.').pop().split('?')[0].replace(/[^a-zA-Z0-9]/g,'') || 'jpg';
+    const nombre = el.dataset.tipo === 'video' ? `video_1.${ext}` : `imagen_${i+1}.${ext}`;
+    chrome.downloads.download({ url, filename: 'BioCattaleya/seleccion/' + nombre, conflictAction: 'overwrite' });
+  });
+  mostrarExportStatus(`✅ Descargando ${items.length} archivo(s)`, 'success');
 }
