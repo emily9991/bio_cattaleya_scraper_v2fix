@@ -137,21 +137,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getLicenseStatus().then(sendResponse);
     return true;
   }
-
-  if (message.action === 'download_image') {
+  
+  if (message.action === 'fetch_image_b64') {
     fetch(message.url)
       .then(r => r.blob())
       .then(blob => {
-        const blobUrl = URL.createObjectURL(blob);
-        chrome.downloads.download(
-          { url: blobUrl, filename: message.filename, conflictAction: 'overwrite' },
-          id => {
-            URL.revokeObjectURL(blobUrl);
-            sendResponse({ ok: !!id });
-          }
-        );
+        const reader = new FileReader();
+        reader.onloadend = () => sendResponse({ b64: reader.result });
+        reader.readAsDataURL(blob);
       })
-      .catch(() => sendResponse({ ok: false }));
+      .catch(e => sendResponse({ error: e.message }));
     return true;
   }
 
