@@ -167,14 +167,23 @@ router.patch('/pages/:pageId', requireNotionToken, async (req, res) => {
   try {
     const { pageId } = req.params;
     const { properties } = req.body;
-    
+
+    // Validar que pageId sea un UUID válido de Notion
+    const UUID_REGEX = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(pageId)) {
+      return res.status(400).json({
+        error: 'Invalid page ID format',
+        code: 'INVALID_PAGE_ID'
+      });
+    }
+
     if (!properties) {
       return res.status(400).json({
         error: 'Properties are required',
         code: 'MISSING_PROPERTIES'
       });
     }
-    
+
     const notionResponse = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
       method: 'PATCH',
       headers: {
@@ -184,9 +193,9 @@ router.patch('/pages/:pageId', requireNotionToken, async (req, res) => {
       },
       body: JSON.stringify({ properties })
     });
-    
+
     const notionData = await notionResponse.json();
-    
+
     if (!notionResponse.ok) {
       console.error('Notion API error:', notionResponse.status);
       return res.status(notionResponse.status).json({
@@ -194,13 +203,13 @@ router.patch('/pages/:pageId', requireNotionToken, async (req, res) => {
         code: 'NOTION_API_ERROR'
       });
     }
-    
+
     res.json({
       success: true,
       pageId: notionData.id,
       lastEdited: notionData.last_edited_time
     });
-    
+
   } catch (error) {
     console.error('Error updating Notion page:', error.message);
     res.status(500).json({
