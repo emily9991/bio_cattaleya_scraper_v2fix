@@ -415,11 +415,16 @@ function extraerVideo() {
   var sourceEl = document.querySelector("video source[src]");
   if (sourceEl && sourceEl.src) return sourceEl.src;
 
-  // 3. Tmall 2026 — video en atributo data o JSON inline
-  var dataVideo = document.querySelector("[data-video-url],[data-src*='.mp4']");
-  if (dataVideo) {
+  // FIX #50: evitar selector substring — filtrar por extensión real del atributo
+var dataVideo = document.querySelector("[data-video-url]") ||
+    Array.from(document.querySelectorAll("[data-src]")).find(el => {
+        try {
+            return new URL(el.getAttribute("data-src")).pathname.endsWith('.mp4');
+        } catch(e) { return false; }
+    });
+if (dataVideo) {
     return dataVideo.getAttribute("data-video-url") || dataVideo.getAttribute("data-src") || "";
-  }
+}
 
   // 4. Buscar en scripts inline
   var scripts = document.querySelectorAll("script:not([src])");

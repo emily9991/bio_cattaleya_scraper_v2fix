@@ -620,9 +620,15 @@ async function descargarSeleccionadas() {
 
   const slug = nombreRaw.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '').slice(0, 60);
 
-  const tabs = await chrome.tabs.query({});
-  const tab = tabs.find(t => t.url && /taobao\.com|tmall\.com|1688\.com/.test(t.url));
-  const sku = tab?.url?.match(/[?&]id=(\d+)/)?.[1] || tab?.url?.match(/\/(\d{8,})/)?.[1] || String(Date.now());
+  // FIX #54: validar hostname exacto con anchors
+const tabs = await chrome.tabs.query({});
+const tab = tabs.find(t => {
+    try {
+        const h = new URL(t.url).hostname;
+        return /(?:^|\.)(?:taobao|tmall|1688)\.com$/.test(h);
+    } catch(e) { return false; }
+});
+const sku = tab?.url?.match(/[?&]id=(\d+)/)?.[1] || tab?.url?.match(/\/(\d{8,})/)?.[1] || String(Date.now());
 
   const carpeta = `BioCattaleya/seleccion/${slug}_${sku}`;
   mostrarExportStatus(`⏳ Descargando ${items.length} archivo(s)…`, '');
