@@ -102,20 +102,19 @@ class AmazonParser(BaseParser):
         """Extract Amazon-specific pricing information."""
         data = super().extract_pricing_info(raw_data)
         
-        # Amazon uses different currencies based on domain
+        # Amazon uses different currencies based on domain — FIX #3 #4
+        from urllib.parse import urlparse
         url = raw_data.get('page_metadata', {}).get('url', '')
-        
-        if 'amazon.com' in url:
+        hostname = urlparse(url).netloc.lower()
+
+        if hostname in ('www.amazon.com', 'amazon.com'):
             data['currency'] = '$'
         elif 'amazon.co.uk' in url:
             data['currency'] = '£'
-        elif 'amazon.de' in url:
-            data['currency'] = '€'
-        elif 'amazon.fr' in url:
-            data['currency'] = '€'
-        elif 'amazon.it' in url:
-            data['currency'] = '€'
-        elif 'amazon.es' in url:
+        elif hostname in ('www.amazon.de', 'amazon.de',
+                  'www.amazon.fr', 'amazon.fr',
+                  'www.amazon.it', 'amazon.it',
+                  'www.amazon.es', 'amazon.es'):
             data['currency'] = '€'
         
         # Extract discount information

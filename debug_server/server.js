@@ -12,13 +12,19 @@ const logs = [];
 app.options('/log', (req, res) => res.sendStatus(200));
 
 app.post('/log', (req, res) => {
-  const entry = {
-    ts: new Date().toISOString(),
-    ...req.body
-  };
-  logs.push(entry);
-  const tag = entry.level === 'error' ? 'â' : entry.level === 'warn' ? 'â' : 'â';
-  console.log(`${tag} [${entry.source}] ${entry.msg}`, entry.data ? JSON.stringify(entry.data).slice(0,200) : '');
+  // FIX #33: sanitizar campos externos antes de loggear
+  const level  = String(req.body?.level  || '').slice(0, 20);
+  const source = String(req.body?.source || 'unknown').slice(0, 50);
+  const msg    = String(req.body?.msg    || '').slice(0, 200);
+  const data   = req.body?.data ?? null;
+
+  const tag = level === 'error' ? 'â' : level === 'warn' ? 'â' : 'â';
+  console.log('%s [%s] %s %s',
+    tag, source, msg,
+    data ? JSON.stringify(data).slice(0, 200) : ''
+  );
+
+  logs.push({ ts: new Date().toISOString(), level, source, msg, data });
   res.json({ ok: true });
 });
 
