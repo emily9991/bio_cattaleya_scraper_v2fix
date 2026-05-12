@@ -4,11 +4,19 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-// const XLSX = require('xlsx'); // DESACTIVADO - vulnerabilidad HIGH
+const rateLimit = require('express-rate-limit');
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Rate limiting — máximo 100 requests por 15 minutos por IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { ok: false, error: 'Demasiadas peticiones, intenta más tarde' }
+});
+app.use(limiter);
 
 // --- MONITOR EN TIEMPO REAL ---
 // Esta es la ruta que tu extensión usará para enviarte los datos del labial
