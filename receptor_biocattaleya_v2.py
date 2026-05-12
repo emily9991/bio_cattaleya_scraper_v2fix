@@ -11,6 +11,31 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+from urllib.parse import urlparse
+
+# ─── SECURITY HELPERS ─────────────────────────────────────────────
+ALLOWED_MEDIA_HOSTS = {
+    "img.alicdn.com", "img.taobao.com", "img.tmall.com",
+    "video.alicdn.com", "g.alicdn.com"
+}
+
+def es_url_permitida(url):
+    """FIX CodeQL: validar hostname real, no substring."""
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme in ("http", "https") and parsed.netloc in ALLOWED_MEDIA_HOSTS
+    except Exception:
+        return False
+
+def safe_join(base, filename):
+    """FIX CodeQL: verificar que el path resultante siga dentro del base."""
+    base_real = os.path.realpath(base)
+    target = os.path.realpath(os.path.join(base, filename))
+    if not target.startswith(base_real + os.sep):
+        raise ValueError(f"Path traversal bloqueado: {target}")
+    return target
+# ──────────────────────────────────────────────────────────────────
+
 app = Flask(__name__)
 CORS(app)
 
@@ -37,7 +62,7 @@ def obtener_tasa_cambio():
         return TASA_CAMBIO
 
 
-# ─── VARIANTES DE URL (CDN Alibaba suele 404 si se normaliza mal) ──
+# ─── VARIANTES DE URL ────────────────────────────────────────
 def _urls_alternativas_descarga(url):
     """Genera candidatos: original completa, sin query, y nombre sin sufijo miniatura."""
     if not url or not isinstance(url, str):
@@ -59,7 +84,6 @@ def _urls_alternativas_descarga(url):
     base_no_q = u.split("?")[0]
     if base_no_q != u:
         add(base_no_q)
-    # Doble extensión .jpg.jpg_.webp → .jpg (común en alicdn)
     fixed = re.sub(
         r"(\.(?:jpg|jpeg|png))(\.(?:jpg|jpeg|png))?_\s*\.webp$",
         r"\1",
@@ -68,14 +92,13 @@ def _urls_alternativas_descarga(url):
     )
     if fixed != base_no_q:
         add(fixed)
-    # Sufijo _WxH.jpg al final (miniatura) → probar base + .jpg
     m = re.match(r"^(.+?)(_\d+x\d+\.(?:jpg|jpeg|png|webp))$", base_no_q, re.I)
     if m:
         add(m.group(1) + ".jpg")
     return out
 
 
-# ─── TRADUCCIÓN ZH→EN (mismo endpoint que la extensión) ───────
+# ─── TRADUCCIÓN ZH→EN ────────────────────────────────────────
 def traducir_zh_a_en(texto):
     if not texto or not isinstance(texto, str):
         return ""
@@ -105,11 +128,6 @@ def traducir_zh_a_en(texto):
 
 # ─── DESCARGA DE MEDIA CON ANTI-HOTLINK ──────────────────────
 def descargar_media(url, carpeta, nombre_archivo, referer_url="", es_video=False):
-    """
-    Descarga una imagen o video respetando los headers anti-hotlink
-    de Taobao/Tmall. Prueba varias variantes de URL si hay 404.
-    Retorna True si tuvo éxito.
-    """
     try:
         if not url or not isinstance(url, str):
             return False
@@ -147,11 +165,16 @@ def descargar_media(url, carpeta, nombre_archivo, referer_url="", es_video=False
         ultimo_status = None
 
         for try_url in candidatos:
+            # FIX CodeQL #22-#30: validar URL antes de hacer el request
+            if not es_url_permitida(try_url):
+                print(f"   ⚠ URL no permitida: {try_url}")
+                continue
             r = session.get(try_url, stream=True, timeout=30, headers=headers)
             ultimo_status = r.status_code
             if r.status_code != 200:
                 continue
-            ruta = os.path.join(carpeta, nombre_archivo)
+            # FIX CodeQL #22-#30: safe_join en lugar de os.path.join directo
+            ruta = safe_join(carpeta, nombre_archivo)
             with open(ruta, "wb") as f:
                 for chunk in r.iter_content(8192):
                     if chunk:
@@ -294,14 +317,13 @@ def guardar_completo():
 
     # Crear carpeta del producto
     # Estructura: output / 20260401_223000_nombre_producto /
-    #                         imagenes /
-    #                         videos /
-    #                         datos_completo.json
     timestamp   = datetime.now().strftime("%Y%m%d_%H%M%S")
     nombre_raw  = (data.get("nombre") or "sin_nombre")[:40]
     nombre_slug = re.sub(r'[^\w\s-]', '', nombre_raw).strip().replace(' ', '_')[:30]
     folder_name = f"{timestamp}_{nombre_slug}"
-    product_path = os.path.join(OUTPUT_DIR, folder_name)
+
+    # FIX CodeQL #22-#30: usar safe_join en lugar de os.path.join directo
+    product_path = safe_join(OUTPUT_DIR, folder_name)
 
     img_folder   = os.path.join(product_path, "imagenes")
     video_folder = os.path.join(product_path, "videos")
@@ -326,6 +348,9 @@ def guardar_completo():
     imagenes_ok   = 0
     print(f"   Descargando {len(imagenes_urls)} imágenes del producto...")
     for i, url in enumerate(imagenes_urls, 1):
+        if not es_url_permitida(url):                          # ✅ FIX #22-#30
+            print(f"     ⚠ foto_{i:02d} — URL no permitida")
+            continue
         ok = descargar_media(url, img_folder, f"foto_{i:02d}.jpg", referer_url=url_producto)
         if ok:
             imagenes_ok += 1
@@ -340,6 +365,8 @@ def guardar_completo():
     if imagenes_variantes:
         print(f"   Descargando {len(imagenes_variantes)} imágenes de variantes...")
         for i, vurl in enumerate(imagenes_variantes, 1):
+            if not es_url_permitida(vurl):                     # ✅ FIX #22-#30
+                continue
             if descargar_media(vurl, var_folder, f"var_{i:02d}.jpg", referer_url=url_producto):
                 var_ok += 1
         print(f"   Variantes: {var_ok}/{len(imagenes_variantes)} ✓")
@@ -350,15 +377,17 @@ def guardar_completo():
     if desc_urls:
         print(f"   Descargando {len(desc_urls)} imágenes de descripción...")
         for i, url in enumerate(desc_urls, 1):
+            if not es_url_permitida(url):                      # ✅ FIX #22-#30
+                continue
             ok = descargar_media(url, desc_folder, f"desc_{i:02d}.jpg", referer_url=url_producto)
             if ok:
                 desc_ok += 1
         print(f"   Imágenes descripción: {desc_ok}/{len(desc_urls)} ✓")
 
     # Descargar video
-    video_ok = False
+    video_ok  = False
     video_url = data.get("video", "")
-    if video_url:
+    if video_url and es_url_permitida(video_url):              # ✅ FIX #22-#30
         print(f"   Descargando video...")
         video_ok = descargar_media(
             video_url, video_folder, "video_producto.mp4",
@@ -368,7 +397,7 @@ def guardar_completo():
     else:
         print("   Sin video en este producto")
 
-    # Guardar specs en txt
+    # Guardar specs en txt — ✅ seguro: filename hardcodeado
     specs = data.get("specs", [])
     if specs:
         with open(os.path.join(product_path, "especificaciones.txt"), "w", encoding="utf-8") as f:
@@ -383,7 +412,7 @@ def guardar_completo():
     precio_venta = round(precio_usd * MARGEN, 2) if precio_usd else ""
 
     # Limpiar nombre de tienda
-    tienda_raw   = data.get("tienda", "")
+    tienda_raw    = data.get("tienda", "")
     tienda_limpia = re.sub(r'\d+\.\d+', '', tienda_raw)
     tienda_limpia = re.sub(r'好评率\d+%|平均\d+小时发货|客服满意度\d+%|88VIP', '', tienda_limpia).strip()
 
@@ -396,7 +425,7 @@ def guardar_completo():
     elif not nombre_zh:
         nombre_en = ""
 
-    tienda_rec = data.get("tienda_recomendados") or []
+    tienda_rec      = data.get("tienda_recomendados") or []
     tienda_rec_json = json.dumps(tienda_rec, ensure_ascii=False)[:2000] if tienda_rec else ""
 
     # Construir fila Excel
@@ -429,11 +458,11 @@ def guardar_completo():
         "Img Desc2": desc_urls[1] if len(desc_urls) > 1 else "",
         "Img Desc3": desc_urls[2] if len(desc_urls) > 2 else "",
         "Imgs Desc Descargadas": desc_ok,
-        "Video URL":      video_url,
+        "Video URL":        video_url,
         "Video Descargado": "Sí" if video_ok else "",
-        "Carpeta Local":  folder_name,
-        "Tasa CNY/USD":   round(tasa, 4),
-        "Fecha":          datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "Carpeta Local":    folder_name,
+        "Tasa CNY/USD":     round(tasa, 4),
+        "Fecha":            datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
     for k, v in (data.get("datos_custom") or {}).items():
