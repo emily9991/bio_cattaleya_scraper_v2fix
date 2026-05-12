@@ -9,6 +9,18 @@ function bscLog(source, msg, data, level) {
   try { chrome.runtime.sendMessage({ action: 'debug_log', entry: entry }); } catch (e) {}
 }
 
+var ALLOWED_IMG_HOSTS = ["img.alicdn.com", "img.taobao.com", "img.tmall.com"];
+
+function esUrlImagenPermitida(src) {
+  try {
+    var parsed = new URL(src);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+           ALLOWED_IMG_HOSTS.includes(parsed.hostname);
+  } catch (e) {
+    return false;
+  }
+}
+
 // ============================================================
 // VARIABLES GLOBALES
 // ============================================================
@@ -360,7 +372,7 @@ function extraerImagenes() {
   if (imgs.size < 3) {
     document.querySelectorAll("img").forEach(function(img) {
       var src = img.getAttribute("data-src") || img.src || "";
-      if (src.includes("img.alicdn.com") && img.naturalWidth > 300) {
+      if (esUrlImagenPermitida(src) && img.naturalWidth > 300) {
         src = limpiarUrlImagen(src);
         if (src) imgs.add(src);
       }
@@ -370,8 +382,16 @@ function extraerImagenes() {
   return Array.from(imgs);
 }
 
+//FIX #31: usar URL parsing real, no substring
 function limpiarUrlImagen(src) {
-  if (!src || !src.startsWith("http")) return "";
+  if (!src) return "";
+  try {
+    var parsed = new URL(src);
+    // Solo permitir http y https — nunca data:, javascript:, etc.
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+  } catch (e) {
+    return ""; // URL malformada
+  }
   src = src.split("?")[0];
   src = src.replace(/(\.jpg|\.png|\.webp).*$/i, "$1");
   src = src.replace(/\.webp$/i, ".jpg");
