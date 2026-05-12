@@ -17,7 +17,7 @@ const verifyToken = (req, res, next) => {
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
     if (err) {
       return res.status(403).json({ 
         error: 'Token inválido o expirado'
@@ -37,7 +37,10 @@ const verifyToken = (req, res, next) => {
 
 // Middleware opcional para validar Chrome Runtime ID
 const validateChromeRuntime = (req, res, next) => {
-  if (!req.user.chromeRuntimeId) {
+  // FIX #53 #70: validar formato del chromeRuntimeId antes de usarlo
+  if (!req.user.chromeRuntimeId || 
+      typeof req.user.chromeRuntimeId !== 'string' ||
+      !/^[a-z]{32}$/.test(req.user.chromeRuntimeId)) {
     return res.status(401).json({ 
       error: 'Invalid Chrome runtime identification',
       code: 'INVALID_RUNTIME_ID'
