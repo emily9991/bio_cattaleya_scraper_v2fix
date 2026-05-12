@@ -96,11 +96,11 @@ app.post('/guardar-listado', (req, res) => {
         }
 
         const productosPath = path.join(targetDir, 'productos.json');
-        // FIX #58: validar que items es un array antes de escribir
-if (!Array.isArray(items)) {
-    return res.status(400).json({ ok: false, error: 'Formato de datos inválido' });
-}
-fs.writeFileSync(productosPath, JSON.stringify(items, null, 2), 'utf8');
+        // FIX #58 #63: validar que items es un array antes de escribir
+        if (!Array.isArray(items)) {
+            return res.status(400).json({ ok: false, error: 'Formato de datos inválido' });
+        }
+        fs.writeFileSync(productosPath, JSON.stringify(items, null, 2), 'utf8');
 
         console.log('✅ Listado guardado en: %s', productosPath);
         res.json({ ok: true, path: productosPath });
@@ -184,8 +184,8 @@ app.post('/log', (req, res) => {
 
     console.log('%s [%s] %s %s',
         tag,
-        source,
-        msg,
+        source.replace(/[\r\n]/g, ' '),
+        msg.replace(/[\r\n]/g, ' '),
         data ? JSON.stringify(data).slice(0, 200) : ''
     );
 
