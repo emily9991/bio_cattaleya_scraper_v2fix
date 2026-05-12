@@ -88,10 +88,10 @@ class TestSettings:
         """Test default allowed domains."""
         config = Settings()
         
-        assert "tmall.com" in config.allowed_domains
-        assert "taobao.com" in config.allowed_domains
-        assert "amazon.com" in config.allowed_domains
-        assert "ebay.com" in config.allowed_domains
+    assert any(d == "tmall.com"   for d in config.allowed_domains)
+    assert any(d == "taobao.com"  for d in config.allowed_domains)
+    assert any(d == "amazon.com"  for d in config.allowed_domains)
+    assert any(d == "ebay.com"    for d in config.allowed_domains)
     
     def test_rate_limiting_config(self):
         """Test rate limiting configuration."""

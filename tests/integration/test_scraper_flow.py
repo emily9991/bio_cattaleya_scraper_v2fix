@@ -76,12 +76,16 @@ class TestScraperWorkflow:
         
         # Mock browser manager
         def mock_extract_data(url, selectors):
-            if "tmall.com" in url:
+            from urllib.parse import urlparse
+            hostname = urlparse(url).netloc.lower()
+            if "tmall.com" in hostname:
                 return {'title': 'Tmall Product', 'page_metadata': {'url': url}}
-            elif "taobao.com" in url:
+            elif "taobao.com" in hostname:
                 return {'title': 'Taobao Product', 'page_metadata': {'url': url}}
-            elif "amazon.com" in url:
+            elif "amazon.com" in hostname:
                 return {'title': 'Amazon Product', 'page_metadata': {'url': url}}
+            else:
+                return {'title': 'Unknown Product', 'page_metadata': {'url': url}}
         
         scraper.browser_manager.extract_data = AsyncMock(side_effect=mock_extract_data)
         
