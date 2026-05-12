@@ -92,7 +92,8 @@ router.post('/validate', (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // ✅ DESPUÉS — FIX #52: fijar algoritmo, bloquea alg:none y confusion attacks
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
     // Verificar que el runtime ID en el token siga siendo válido
     if (!isAllowedRuntimeId(decoded.chromeRuntimeId)) {
@@ -134,7 +135,9 @@ router.post('/refresh', (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // ✅ DESPUÉS — FIX #53
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+
 
     // Verificar que el runtime ID siga siendo válido antes de renovar
     if (!isAllowedRuntimeId(decoded.chromeRuntimeId)) {
