@@ -78,11 +78,11 @@ class TestScraperWorkflow:
         def mock_extract_data(url, selectors):
             from urllib.parse import urlparse
             hostname = urlparse(url).netloc.lower()
-            if "tmall.com" in hostname:
+            if hostname.endswith("tmall.com") or hostname == "tmallm.com":
                 return {'title': 'Tmall Product', 'page_metadata': {'url': url}}
-            elif "taobao.com" in hostname:
+            elif hostname.endswith("taobao.com") or hostname == "taobao.com":
                 return {'title': 'Taobao Product', 'page_metadata': {'url': url}}
-            elif "amazon.com" in hostname:
+            elif hostname.endswith("amazon.com") or hostname == "amazon.com":
                 return {'title': 'Amazon Product', 'page_metadata': {'url': url}}
             else:
                 return {'title': 'Unknown Product', 'page_metadata': {'url': url}}

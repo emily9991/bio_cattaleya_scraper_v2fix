@@ -13,7 +13,6 @@ const authLimiter = rateLimit({
 router.use(authLimiter);
 
 // IDs de extensión Chrome autorizados
-// Agregar aquí los chrome.runtime.id de las extensiones permitidas
 const ALLOWED_RUNTIME_IDS = (process.env.ALLOWED_CHROME_IDS || '')
   .split(',')
   .map(id => id.trim())
@@ -21,15 +20,29 @@ const ALLOWED_RUNTIME_IDS = (process.env.ALLOWED_CHROME_IDS || '')
 
 const isAllowedRuntimeId = (id) => {
   if (!id || typeof id !== 'string') return false;
-  // Formato válido: 32 caracteres alfanuméricos en minúscula
   if (!/^[a-z]{32}$/.test(id)) return false;
-  // Si hay allowlist configurada, verificar contra ella
   if (ALLOWED_RUNTIME_IDS.length > 0) {
     return ALLOWED_RUNTIME_IDS.includes(id);
   }
-  // Sin allowlist: solo validar formato (modo desarrollo)
   return true;
 };
+
+// ─── HELPER: validar campo chromeRuntimeId del payload ───────────
+function validarRuntimeIdPayload(decoded, res) {
+  if (
+    !decoded.chromeRuntimeId ||
+    typeof decoded.chromeRuntimeId !== 'string' ||
+    !/^[a-z]{32}$/.test(decoded.chromeRuntimeId)
+  ) {
+    res.status(403).json({
+      error: 'Token malformado',
+      code: 'INVALID_TOKEN_PAYLOAD'
+    });
+    return false;
+  }
+  return true;
+}
+// ─────────────────────────────────────────────────────────────────
 
 router.post('/token', async (req, res) => {
   try {
@@ -42,7 +55,6 @@ router.post('/token', async (req, res) => {
       });
     }
 
-    // Validar que el runtime ID sea legítimo
     if (!isAllowedRuntimeId(chromeRuntimeId)) {
       return res.status(403).json({
         error: 'Unauthorized extension',
@@ -92,10 +104,12 @@ router.post('/validate', (req, res) => {
       });
     }
 
-    // ✅ DESPUÉS — FIX #52: fijar algoritmo, bloquea alg:none y confusion attacks
+    // FIX #52: fijar algoritmo, bloquea alg:none y confusion attacks
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
-    // Verificar que el runtime ID en el token siga siendo válido
+    // FIX #52 #59: validar payload antes de usarlo en security check
+    if (!validarRuntimeIdPayload(decoded, res)) return;
+
     if (!isAllowedRuntimeId(decoded.chromeRuntimeId)) {
       return res.status(403).json({
         success: false,
@@ -135,11 +149,12 @@ router.post('/refresh', (req, res) => {
       });
     }
 
-    // ✅ DESPUÉS — FIX #53
+    // FIX #53: fijar algoritmo, bloquea alg:none y confusion attacks
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
+    // FIX #53 #59: validar payload antes de usarlo en security check
+    if (!validarRuntimeIdPayload(decoded, res)) return;
 
-    // Verificar que el runtime ID siga siendo válido antes de renovar
     if (!isAllowedRuntimeId(decoded.chromeRuntimeId)) {
       return res.status(403).json({
         error: 'Unauthorized extension',
