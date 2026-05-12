@@ -411,8 +411,8 @@ def guardar_completo():
     precio_usd   = round(precio_cny / tasa, 2) if precio_cny else ""
     precio_venta = round(precio_usd * MARGEN, 2) if precio_usd else ""
 
-    # Limpiar nombre de tienda
-    tienda_raw    = data.get("tienda", "")
+    # Limpiar nombre de tienda — FIX #1: truncar input antes del regex (ReDoS)
+    tienda_raw    = str(data.get("tienda", "") or "")[:200]
     tienda_limpia = re.sub(r'\d+\.\d+', '', tienda_raw)
     tienda_limpia = re.sub(r'好评率\d+%|平均\d+小时发货|客服满意度\d+%|88VIP', '', tienda_limpia).strip()
 
