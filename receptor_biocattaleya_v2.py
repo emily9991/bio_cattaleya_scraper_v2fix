@@ -524,7 +524,8 @@ def ver_stats():
             "ultimo":   df.iloc[-1].to_dict() if not df.empty else {},
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # FIX #2: no exponer detalles internos del error
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ─── INICIO ──────────────────────────────────────────────────
