@@ -1,6 +1,16 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
+
+// Rate limit estricto para auth — 20 intentos por 15 minutos
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Demasiados intentos, espera 15 minutos', code: 'RATE_LIMIT_EXCEEDED' }
+});
+
+router.use(authLimiter);
 
 // IDs de extensión Chrome autorizados
 // Agregar aquí los chrome.runtime.id de las extensiones permitidas
