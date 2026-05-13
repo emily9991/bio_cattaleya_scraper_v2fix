@@ -20,7 +20,11 @@ export default [
         importScripts: "readonly",
         CONFIG: "readonly",
         secureStorage: "readonly",
-        licenseValidationInterval: "writable"
+        licenseValidationInterval: "writable",
+        Blob: "readonly",
+        CustomEvent: "readonly",
+        FileReader: "readonly",
+        process: "readonly"
       }
     },
     rules: {
