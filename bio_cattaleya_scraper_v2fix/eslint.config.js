@@ -14,12 +14,19 @@ export default [
         fetch: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
-        URL: "readonly"
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        URL: "readonly",
+        importScripts: "readonly",
+        CONFIG: "readonly",
+        secureStorage: "readonly",
+        licenseValidationInterval: "writable"
       }
     },
     rules: {
       "no-unused-vars": "warn",
-      "no-undef": "warn"
+      "no-undef": "warn",
+      "no-empty": "warn"
     }
   }
 ];
