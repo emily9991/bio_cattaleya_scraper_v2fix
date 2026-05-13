@@ -5,6 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   chrome-extension:
@@ -18,11 +19,12 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
+        cache-dependency-path: bio_cattaleya_scraper_v2fix/package-lock.json
 
     - name: Install dependencies
       run: npm ci
       working-directory: bio_cattaleya_scraper_v2fix
 
     - name: Lint JavaScript
-      run: npm run lint
+      run: npx eslint src/ background.js content.js
       working-directory: bio_cattaleya_scraper_v2fix
