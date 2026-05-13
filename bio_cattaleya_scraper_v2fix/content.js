@@ -216,8 +216,13 @@ function autoScroll() {
 function esPaginaFichaProducto() {
   var u = window.location.href;
   if (/\/item\.htm/i.test(u)) return true;
-  if (/detail\.tmall\.(com|hk)\/item/i.test(u)) return true;
-  if (/item\.(taobao|tmall)\.com\/item/i.test(u)) return true;
+  
+  try {
+    const { hostname, pathname } = new URL(u);
+    if (/(^|\.)tmall\.(com|hk)$/i.test(hostname) && pathname.includes('/item')) return true;
+    if (/(^|\.)((taobao|tmall)\.com)$/i.test(hostname) && pathname.includes('/item')) return true;
+  } catch { /* URL inválida — ignorar */ }
+  
   if (document.querySelector("#SkuPanel_tbpcDetail_ssr2025, #tbpcDetail_SkuPanelBody")) return true;
   return false;
 }
