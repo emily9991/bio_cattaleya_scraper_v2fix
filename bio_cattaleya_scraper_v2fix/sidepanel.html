@@ -3,945 +3,1142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bio Cattaleya — Panel lateral</title>
+<title>Bio Cattaleya · Scraper Pro</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg-deep:    #0d0015;
-    --bg-panel:   #160024;
-    --bg-card:    #1e0035;
-    --bg-hover:   #2a004d;
-    --accent:     #9b30ff;
-    --accent-2:   #da8fff;
-    --accent-3:   #ff6ef7;
-    --green:      #00e5a0;
-    --yellow:     #ffe566;
-    --red:        #ff5572;
-    --text-main:  #f0e6ff;
-    --text-dim:   #9b7fc0;
-    --text-mono:  #c084fc;
-    --border:     rgba(155, 48, 255, 0.25);
-    --glow:       0 0 20px rgba(155, 48, 255, 0.35);
-    --radius:     10px;
+    --bg:          #fafaf9;
+    --surface:     #ffffff;
+    --surface-2:   #f5f5f4;
+    --border:      #e7e5e4;
+    --border-2:    #d6d3d1;
+    --text:        #1c1917;
+    --text-2:      #44403c;
+    --text-dim:    #78716c;
+    --text-muted:  #a8a29e;
+    --violet:      #7c3aed;
+    --violet-50:   #f5f3ff;
+    --violet-100:  #ede9fe;
+    --violet-200:  #ddd6fe;
+    --green:       #16a34a;
+    --green-50:    #f0fdf4;
+    --green-100:   #dcfce7;
+    --amber:       #d97706;
+    --amber-50:    #fffbeb;
+    --amber-100:   #fef3c7;
+    --red:         #dc2626;
+    --red-100:     #fee2e2;
+    --sky:         #0284c7;
+    --sky-50:      #f0f9ff;
+    --sky-100:     #e0f2fe;
+    --radius:      8px;
+    --radius-sm:   6px;
+    --radius-lg:   12px;
+    --shadow-sm:   0 1px 2px rgba(0,0,0,.06);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
     width: 100%;
-    min-width: 260px;
-    max-width: 100%;
+    min-width: 280px;
     min-height: 100vh;
-    background: var(--bg-deep);
-    color: var(--text-main);
-    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 13px;
+    line-height: 1.5;
     overflow-x: hidden;
   }
 
-  /* ─── HEADER ─── */
+  /* ── HEADER ── */
   .header {
-    background: linear-gradient(135deg, #1a0033 0%, #0d0015 100%);
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 14px 16px 12px;
-    position: relative;
-    overflow: hidden;
+    padding: 11px 14px 10px;
   }
-  .header::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle, rgba(155,48,255,0.3) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .header-top {
+  .header-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     margin-bottom: 8px;
   }
   .logo {
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    box-shadow: var(--glow);
-    flex-shrink: 0;
+    font-size: 15px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(124,58,237,.25);
   }
-  .header-title h1 {
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent-2);
-    letter-spacing: 0.5px;
-    line-height: 1;
+  .header-meta    { flex: 1; min-width: 0; }
+  .header-meta h1 {
+    font-size: 12px; font-weight: 700; color: var(--text);
+    letter-spacing: .3px; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .header-title p {
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-top: 2px;
-    letter-spacing: 0.3px;
+  .header-meta p  { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 3px 8px;
+    font-size: 10px; font-weight: 500; color: var(--text-dim);
+    white-space: nowrap; flex-shrink: 0;
   }
-  .status-dot {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 10px;
-    color: var(--text-dim);
-  }
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
+  .status-live {
+    width: 6px; height: 6px; border-radius: 50%;
     background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse 2s infinite;
+    box-shadow: 0 0 5px rgba(22,163,74,.7);
+    animation: blink 2.5s infinite;
   }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-  .site-info {
-    background: rgba(155,48,255,0.08);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 5px 9px;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: var(--text-mono);
-    display: flex; align-items: center; gap: 6px;
-    overflow: hidden;
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .site-chip {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 4px 9px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-dim); overflow: hidden;
   }
-  .site-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .site-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  /* ─── TABS ─── */
+  /* ── TABS ── */
   .tabs {
     display: flex;
-    background: var(--bg-panel);
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
+    padding: 0 14px;
   }
   .tab {
-    flex: 1;
-    padding: 8px 2px 7px;
-    text-align: center;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    color: var(--text-dim);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    display: flex; align-items: center; gap: 5px;
+    padding: 10px 12px 9px;
+    font-size: 12px; font-weight: 600; color: var(--text-dim);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap; user-select: none;
   }
-  .tab .tab-icon { font-size: 14px; }
-  .tab:hover { color: var(--accent-2); background: var(--bg-hover); }
-  .tab.active { color: var(--accent-2); border-bottom-color: var(--accent); background: rgba(155,48,255,0.06); }
+  .tab .tab-icon { font-size: 13px; }
+  .tab:hover  { color: var(--text-2); }
+  .tab.active { color: var(--violet); border-bottom-color: var(--violet); }
 
-  /* ─── BODY ─── */
-  .tab-content { display: none; padding: 12px; }
-  .tab-content.active { display: block; }
+  /* ── TAB CONTENT ── */
+  .tab-content         { display: none; padding: 13px; }
+  .tab-content.active  { display: block; }
 
-  /* ─── SECTION CARDS ─── */
-  .section-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 8px;
-    overflow: hidden;
-    transition: border-color 0.2s;
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 10px;
+    overflow: hidden; box-shadow: var(--shadow-sm);
   }
-  .section-card:hover { border-color: rgba(155,48,255,0.5); }
-  
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    cursor: pointer;
-    user-select: none;
+  .card-hdr {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; cursor: pointer; user-select: none;
   }
-  .section-icon { font-size: 14px; flex-shrink: 0; }
-  .section-label {
-    flex: 1;
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--text-main);
-  }
-  .section-badge {
-    font-size: 9px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-  .badge-idle { background: rgba(155,48,255,0.15); color: var(--text-dim); }
-  .badge-running { background: rgba(255,229,102,0.15); color: var(--yellow); animation: pulse 1s infinite; }
-  .badge-done { background: rgba(0,229,160,0.15); color: var(--green); }
-  .badge-error { background: rgba(255,85,114,0.15); color: var(--red); }
+  .card-hdr-icon  { font-size: 14px; flex-shrink: 0; }
+  .card-hdr-title { flex: 1; font-weight: 600; font-size: 12px; color: var(--text); }
+  .card-body      { display: none; padding: 12px; border-top: 1px solid var(--border); }
+  .card-body.open { display: block; }
 
-  .section-body {
-    display: none;
-    padding: 0 12px 12px;
-    border-top: 1px solid var(--border);
-    animation: slideDown 0.2s ease;
+  /* ── BADGES ── */
+  .badge {
+    font-size: 9px; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; letter-spacing: .4px; text-transform: uppercase;
+    flex-shrink: 0; white-space: nowrap;
   }
-  .section-body.open { display: block; }
-  @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+  .badge-idle  { background:var(--surface-2); color:var(--text-dim); border:1px solid var(--border); }
+  .badge-ok    { background:var(--green-100); color:var(--green); }
+  .badge-warn  { background:var(--amber-100); color:var(--amber); }
+  .badge-error { background:var(--red-100);   color:var(--red); }
+  .badge-run   { background:var(--violet-100);color:var(--violet); animation:blink .8s infinite; }
+  .badge-sky   { background:var(--sky-100);   color:var(--sky); }
 
-  .section-result {
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 1.6;
-    margin-top: 8px;
-    padding: 6px 8px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 6px;
-    min-height: 30px;
-    word-break: break-word;
+  /* ── INPUTS ── */
+  .field            { margin-bottom: 10px; }
+  .field:last-child { margin-bottom: 0; }
+  .lbl {
+    display: block; font-size: 10px; font-weight: 600;
+    color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 4px;
   }
-  .section-result.success { color: var(--green); }
-  .section-result.error { color: var(--red); }
+  .hint { display:block; font-size:10px; color:var(--text-muted); margin-top:3px; }
+  .inp {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border-2); border-radius: var(--radius-sm);
+    padding: 7px 10px; color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .inp:focus {
+    border-color: var(--violet);
+    box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+  }
+  .inp::placeholder { color: var(--text-muted); }
+  .inp.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  textarea.inp { resize: vertical; min-height: 60px; }
+  .inp-wrap     { position: relative; display: flex; }
+  .inp-wrap .inp { padding-right: 34px; }
+  .eye-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; opacity: .4; padding: 0; transition: opacity .15s;
+  }
+  .eye-btn:hover { opacity: .9; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-  /* ─── BUTTONS ─── */
+  /* ── BUTTONS ── */
   .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    padding: 9px 12px;
-    border: none;
-    border-radius: 7px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 12px; border: none; border-radius: var(--radius-sm);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
   }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #6d00d6);
-    color: white;
-    box-shadow: 0 3px 12px rgba(155,48,255,0.35);
+  .btn:active { transform: scale(.98); }
+  .btn-w    { width: 100%; }
+  .btn-primary  { background: var(--violet); color: #fff; box-shadow: 0 1px 3px rgba(124,58,237,.3); }
+  .btn-primary:hover  { background: #6d28d9; }
+  .btn-secondary { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border-2); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-green { background: var(--green); color: #fff; box-shadow: 0 1px 3px rgba(22,163,74,.25); }
+  .btn-green:hover { background: #15803d; }
+  .btn-dark  { background: #292524; color: #fff; }
+  .btn-dark:hover    { background: #1c1917; }
+  .btn-dark:disabled {
+    background: var(--surface-2); color: var(--text-muted);
+    cursor: not-allowed; box-shadow: none;
   }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(155,48,255,0.5); }
-  .btn-primary:active { transform: translateY(0); }
+  .btn-row         { display: flex; gap: 7px; margin-top: 8px; }
+  .btn-row .btn    { flex: 1; }
 
-  .btn-secondary {
-    background: rgba(155,48,255,0.1);
-    color: var(--accent-2);
-    border: 1px solid var(--border);
+  /* ── NOTICES ── */
+  .notice {
+    border-radius: var(--radius-sm); padding: 8px 11px;
+    font-size: 11px; line-height: 1.5; margin-bottom: 10px;
   }
-  .btn-secondary:hover { background: rgba(155,48,255,0.2); }
-
-  .btn-green {
-    background: linear-gradient(135deg, #00b37d, #006b4a);
-    color: white;
-    box-shadow: 0 3px 12px rgba(0,229,160,0.25);
-  }
-  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(0,229,160,0.4); }
-
-  .btn-danger {
-    background: rgba(255,85,114,0.1);
-    color: var(--red);
-    border: 1px solid rgba(255,85,114,0.2);
-  }
-  .btn-danger:hover { background: rgba(255,85,114,0.2); }
-
-  .btn-row { display: flex; gap: 6px; margin-top: 8px; }
-  .btn-row .btn { margin-top: 0; }
-
-  /* ─── SELECTOR PERSONALIZADO ─── */
-  .campo-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 8px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 6px;
-    margin-top: 5px;
-    border: 1px solid transparent;
-    transition: border-color 0.2s;
-  }
-  .campo-item:hover { border-color: var(--border); }
-  .campo-name { font-weight: 600; color: var(--accent-2); font-size: 11px; min-width: 70px; }
-  .campo-sel { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .campo-del { cursor: pointer; color: var(--red); font-size: 14px; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; }
-  .campo-del:hover { opacity: 1; }
-
-  .input-row {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .input-field {
-    flex: 1;
-    background: rgba(0,0,0,0.25);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 7px 9px;
-    color: var(--text-main);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .input-field:focus { border-color: var(--accent); }
-  .input-field::placeholder { color: var(--text-dim); }
-
-  select.input-field {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239b7fc0'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    padding-right: 24px;
+  .notice:last-child { margin-bottom: 0; }
+  .n-green  { background:var(--green-50); border:1px solid #bbf7d0; color:#15803d; }
+  .n-amber  { background:var(--amber-50); border:1px solid #fde68a; color:#92400e; }
+  .n-violet { background:var(--violet-50); border:1px solid var(--violet-200); color:var(--violet); }
+  .notice code {
+    background: rgba(0,0,0,.07); padding: 0 3px; border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
   }
 
-  /* ─── PREVIEW ─── */
-  .preview-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .preview-item {
-    background: rgba(0,0,0,0.2);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 8px;
-  }
-  .preview-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-  .preview-value { font-size: 12px; color: var(--text-main); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .preview-value.mono { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent-2); }
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 10px 0; }
 
-  .img-preview { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-  .img-thumb {
-    width: 48px; height: 48px;
-    border-radius: 5px;
-    object-fit: cover;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: transform 0.2s;
+  /* ── TOGGLE SWITCH ── */
+  .toggle-row {
+    display: flex; align-items: center;
+    justify-content: space-between; padding: 6px 0;
   }
-  .img-thumb:hover { transform: scale(1.1); }
+  .toggle-info .toggle-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
+  .toggle-info .toggle-sub   { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .sw { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
+  .sw input { opacity: 0; width: 0; height: 0; }
+  .sw-track {
+    position: absolute; inset: 0; background: var(--border-2);
+    border-radius: 19px; cursor: pointer; transition: .2s;
+  }
+  .sw-track::before {
+    content: ''; position: absolute;
+    width: 13px; height: 13px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%;
+    transition: .2s; box-shadow: var(--shadow-sm);
+  }
+  .sw input:checked + .sw-track           { background: var(--text); }
+  .sw input:checked + .sw-track::before  { transform: translateX(15px); }
 
-  /* ─── LISTADO ─── */
-  .listing-table-wrap {
-    margin-top: 8px;
-    max-height: 300px;
-    overflow: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: rgba(0,0,0,0.15);
+  /* ── STEP ITEMS ── */
+  .step-list { list-style: none; }
+  .step-item {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
   }
-  .listing-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10px;
+  .step-item:last-child { border-bottom: none; }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: var(--text-dim); flex-shrink: 0;
   }
-  .listing-table th,
-  .listing-table td {
-    padding: 6px 8px;
-    text-align: left;
+  .step-num.ok    { background:var(--green-100); border-color:#bbf7d0; color:var(--green); }
+  .step-num.error { background:var(--red-100); border-color:#fca5a5; color:var(--red); }
+  .step-lbl { flex: 1; font-size: 12px; font-weight: 500; color: var(--text-2); min-width: 0; }
+  .step-res {
+    flex-basis: 100%; margin-left: 28px;
+    font-size: 10px; color: var(--text-dim); line-height: 1.4;
+    white-space: normal; word-break: break-word;
+  }
+  /* popup.js fuerza className 'section-result success/error' — lo manejamos aquí */
+  .step-res.ok,            span.section-result.success { color: var(--green) !important; }
+  .step-res.err,           span.section-result.error   { color: var(--red)   !important; }
+  span.section-result { font-size: 10px; }
+  .step-btn {
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    border-radius: 5px; padding: 4px 9px;
+    font-size: 10px; font-weight: 600; color: var(--text-2);
+    cursor: pointer; transition: all .15s; flex-shrink: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .step-btn:hover   { background:var(--violet-100); color:var(--violet); border-color:var(--violet-200); }
+  .step-btn.running { background:var(--violet-100); color:var(--violet); border-color:var(--violet-200); animation:blink .8s infinite; }
+  .step-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* OCR LOG */
+  .log-box {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 7px 9px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--text-dim); max-height: 70px; overflow-y: auto;
+    line-height: 1.8; margin-top: 8px;
+  }
+
+  /* ── PRICE GRID ── */
+  .price-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px; margin-top: 6px;
+  }
+  .price-col { border-radius: var(--radius-sm); padding: 8px; text-align: center; }
+  .price-col.cny { border: 1.5px dashed var(--amber); background: var(--amber-50); }
+  .price-col.usd { border: 1px solid var(--border-2); background: var(--surface); }
+  .price-col.cop { border: 1px solid #bbf7d0; background: var(--green-50); }
+  .price-lbl {
+    font-size: 9px; font-weight: 700; letter-spacing: .5px;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .price-col.cny .price-lbl { color: var(--amber); }
+  .price-col.usd .price-lbl { color: var(--text-dim); }
+  .price-col.cop .price-lbl { color: var(--green); }
+  .price-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 500; color: var(--text);
+  }
+  .price-col.cop .price-val { color: var(--green); font-weight: 700; }
+  .ocr-tag {
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: 8px; background: var(--amber-100); color: var(--amber);
+    border-radius: 3px; padding: 1px 4px; font-weight: 700; margin-top: 3px;
+  }
+  /* inputs dentro del price grid */
+  .price-col .inp {
+    text-align: center; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; padding: 4px 4px; background: transparent;
+    border: none; border-bottom: 1px solid var(--border-2); border-radius: 0;
+    box-shadow: none; margin-top: 2px; width: 100%;
+  }
+  .price-col .inp:focus { border-bottom-color: var(--violet); box-shadow: none; }
+  .price-col.cop .inp   { color: var(--green); font-weight: 700; }
+  .margin-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px; padding: 6px 10px;
+    background: var(--green-50); border: 1px solid #bbf7d0;
+    border-radius: var(--radius-sm); font-size: 11px;
+  }
+  .margin-bar .m-val  { font-weight: 700; color: var(--green); }
+  .margin-bar .m-rate { font-size: 10px; color: var(--text-dim); }
+
+  /* ── CHIPS ── */
+  .chips-section { margin-top: 10px; }
+  .chips-lbl {
+    font-size: 10px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px;
+  }
+  .chips-wrap { display: flex; flex-wrap: wrap; gap: 4px; min-height: 28px; padding: 2px 0; }
+  .chip { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid; }
+  .chip-sky   { background:var(--sky-50); border-color:#bae6fd; color:var(--sky); }
+  .chip-stone { background:var(--surface-2); border-color:var(--border-2); color:var(--text-2); }
+  .chip-empty { color:var(--text-muted); font-size:10px; border:1.5px dashed var(--border-2); background:transparent; }
+
+  /* ── VARIANTS TABLE ── */
+  .var-wrap { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .var-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .var-table th {
+    background: var(--surface-2); padding: 5px 8px; text-align: left;
+    font-size: 10px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .3px;
     border-bottom: 1px solid var(--border);
-    vertical-align: middle;
   }
-  .listing-table th {
-    background: var(--bg-card);
-    color: var(--accent-2);
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-  .listing-table tr:hover td { background: rgba(155,48,255,0.06); }
-  .listing-thumb {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-  }
-  .listing-table a { color: var(--accent-2); word-break: break-all; font-size: 9px; }
+  .var-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); color: var(--text-2); }
+  .var-table tr:last-child td { border-bottom: none; }
+  .var-table tr:hover td { background: var(--surface-2); }
+  .stk { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  .stk-ok  { background:var(--green-100); color:var(--green); }
+  .stk-low { background:var(--amber-100); color:var(--amber); }
+  .stk-out { background:var(--red-100);   color:var(--red); }
 
-  /* ─── DATA SETUP (revisión pre-exportación) ─── */
-  .data-setup-scroll-wrap {
-    display: none;
-    max-height: min(420px, 62vh);
-    overflow: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: rgba(0, 0, 0, 0.22);
-    margin-top: 10px;
+  /* ── GALLERY ── */
+  .gallery-toolbar { display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+  .gallery-count   { font-size:10px; color:var(--text-dim); margin-left:auto; }
+  .galeria-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 5px; max-height: 200px; overflow-y: auto;
   }
-  .data-setup-scroll-wrap.visible { display: block; }
-  .data-setup-table {
-    min-width: 680px;
-    width: max-content;
-    max-width: none;
-    border-collapse: collapse;
-    font-size: 10px;
+  .galeria-item {
+    position: relative; border-radius: 6px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer; aspect-ratio: 1;
+    background: var(--surface-2); transition: border-color .15s;
   }
-  .data-setup-table th,
-  .data-setup-table td {
-    padding: 8px 10px;
-    text-align: left;
+  .galeria-item.selected { border-color: var(--violet); }
+  .galeria-item img      { width:100%; height:100%; object-fit:cover; display:block; }
+  .galeria-item .chk {
+    position: absolute; top: 4px; left: 4px;
+    width: 16px; height: 16px; border-radius: 4px;
+    background: rgba(255,255,255,.85); border: 1.5px solid var(--border-2);
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+  }
+  .galeria-item.selected .chk { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .galeria-video-badge {
+    position: absolute; bottom: 4px; right: 4px;
+    background: rgba(0,0,0,.65); color: #fbbf24;
+    font-size: 8px; padding: 1px 4px; border-radius: 3px; font-weight: 700;
+  }
+
+  /* ── URL BAR ── */
+  .url-bar {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-dim); overflow: hidden; margin-top: 10px;
+  }
+  .url-bar span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ── SUPABASE STATUS BAR ── */
+  .sb-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    margin-bottom: 10px; font-size: 11px; color: var(--text-dim);
+  }
+  .dot-sb { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-sb.idle    { background: var(--border-2); }
+  .dot-sb.testing { background: var(--amber); animation: blink .8s infinite; }
+  .dot-sb.ok      { background: var(--green); box-shadow: 0 0 6px rgba(22,163,74,.5); }
+  .dot-sb.error   { background: var(--red); }
+
+  /* ── STATS GRID ── */
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 11px; box-shadow: var(--shadow-sm);
+  }
+  .stat-name { font-size: 10px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+  .stat-val  { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1; margin-bottom: 3px; }
+  .stat-sub  { font-size: 9px; color: var(--text-muted); }
+
+  /* ── PRODUCT PREVIEW ROWS ── */
+  .prev-row {
+    display: flex; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid var(--border); align-items: flex-start;
+  }
+  .prev-row:last-child { border-bottom: none; }
+  .prev-key { width: 68px; flex-shrink: 0; font-size: 10px; color: var(--text-dim); font-weight: 600; padding-top: 1px; }
+  .prev-val { flex: 1; font-size: 11px; color: var(--text-2); word-break: break-word; line-height: 1.4; }
+  .prev-val.mono { font-family: 'JetBrains Mono', monospace; color: var(--violet); }
+
+  /* ── JSON PREVIEW ── */
+  .json-box {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-dim); max-height: 120px; overflow-y: auto; line-height: 1.8;
+  }
+
+  /* ── SECURITY LIST ── */
+  .sec-list { list-style: none; }
+  .sec-list li {
+    display: flex; align-items: flex-start; gap: 7px;
+    padding: 5px 0; font-size: 11px; color: var(--text-2); line-height: 1.4;
     border-bottom: 1px solid var(--border);
-    vertical-align: top;
   }
-  .data-setup-table th {
-    background: linear-gradient(180deg, var(--bg-card) 0%, #1a0a28 100%);
-    color: var(--accent-2);
-    font-weight: 600;
-    white-space: nowrap;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    box-shadow: 0 1px 0 var(--border);
-  }
-  .data-setup-table tr:hover td { background: rgba(155, 48, 255, 0.07); }
-  .data-setup-table .col-url {
-    max-width: 220px;
-    word-break: break-all;
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    color: var(--text-mono);
-  }
-  .data-setup-table .col-nombre { max-width: 200px; }
-  .data-setup-single-card {
-    font-size: 11px;
-    line-height: 1.55;
-    margin-top: 10px;
-    padding: 10px 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    display: none;
-  }
-  .data-setup-single-card.visible { display: block; }
-  .data-setup-single-card dt {
-    color: var(--text-dim);
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-top: 6px;
-  }
-  .data-setup-single-card dt:first-child { margin-top: 0; }
-  .data-setup-single-card dd {
-    color: var(--text-main);
-    margin: 0;
-    word-break: break-word;
-  }
+  .sec-list li:last-child { border-bottom: none; }
+  .sec-icon { flex-shrink: 0; margin-top: 1px; }
 
-  /* ─── EXPORT TAB ─── */
-  .export-option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .export-option:hover { border-color: rgba(155,48,255,0.5); background: var(--bg-hover); }
-  .export-icon { font-size: 20px; }
-  .export-info { flex: 1; }
-  .export-title { font-size: 12px; font-weight: 600; color: var(--text-main); }
-  .export-desc { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
-  .export-arrow { color: var(--text-dim); font-size: 16px; }
+  /* ── INTEGRATION FLOW ── */
+  .flow-step { display: flex; gap: 10px; }
+  .flow-line { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; padding-top: 4px; }
+  .flow-dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); flex-shrink: 0; }
+  .flow-conn { width: 1.5px; flex: 1; background: var(--border-2); min-height: 14px; margin: 2px 0; }
+  .flow-step:last-child .flow-conn { display: none; }
+  .flow-body { flex: 1; padding-bottom: 10px; }
+  .flow-name { font-size: 11px; font-weight: 600; color: var(--text); }
+  .flow-desc { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
 
-  .python-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    background: rgba(0,229,160,0.05);
-    border: 1px solid rgba(0,229,160,0.15);
-    border-radius: 7px;
-    margin-bottom: 10px;
-    font-size: 11px;
-  }
-  .python-status.offline { background: rgba(255,85,114,0.05); border-color: rgba(255,85,114,0.15); }
-  .python-status .dot-py { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .python-status.offline .dot-py { background: var(--red); }
+  /* ── EXPORT STATUS ── */
+  .export-status { padding: 7px 10px; border-radius: var(--radius-sm); font-size: 11px; margin-top: 8px; display: none; }
+  .export-status.success { background:var(--green-50); border:1px solid #bbf7d0; color:var(--green); }
+  .export-status.error   { background:var(--red-100); border:1px solid #fca5a5; color:var(--red); }
 
-  /* ─── FOOTER ─── */
+  /* ── FOOTER ── */
   .footer {
-    position: sticky;
-    bottom: 0;
-    background: var(--bg-deep);
-    border-top: 1px solid var(--border);
-    padding: 10px 12px;
+    position: sticky; bottom: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 10px 13px;
   }
 
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 10px 0;
-  }
-
-  /* Selector en espera */
-  .selector-waiting {
-    background: rgba(255,110,247,0.1);
-    border: 1px solid rgba(255,110,247,0.3);
-    border-radius: 8px;
-    padding: 10px;
-    text-align: center;
-    font-size: 11px;
-    color: var(--accent-3);
-    animation: pulse 1.5s infinite;
-    display: none;
-  }
-  .selector-waiting.visible { display: block; }
-
-  .tag { font-family: 'Space Mono', monospace; font-size: 9px; padding: 1px 5px; border-radius: 3px; background: rgba(155,48,255,0.15); color: var(--text-mono); }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar       { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(155,48,255,0.3); border-radius: 4px; }
-
-  /* ─── OCR PROGRESS ─── */
-  .ocr-log {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px;
-    margin-top: 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    color: var(--text-mono);
-    max-height: 80px;
-    overflow-y: auto;
-    line-height: 1.8;
-  }
-  .ocr-log .log-line { display: block; }
-  .section-card.ocr-card { border-color: rgba(255,110,247,0.3); }
-  .section-card.ocr-card .section-header { background: rgba(255,110,247,0.05); }
-  .galeria-toolbar { display:flex; align-items:center; gap:6px; margin:8px 0 6px; flex-wrap:wrap; }
-  .galeria-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; max-height:260px; overflow-y:auto; padding-right:2px; }
-  .galeria-item { position:relative; border-radius:6px; overflow:hidden; border:2px solid transparent; cursor:pointer; transition:border-color 0.15s; aspect-ratio:1; background:rgba(0,0,0,0.3); }
-  .galeria-item.selected { border-color:var(--accent); }
-  .galeria-item img { width:100%; height:100%; object-fit:cover; display:block; }
-  .galeria-item .chk { position:absolute; top:4px; left:4px; width:16px; height:16px; border-radius:4px; background:rgba(0,0,0,0.6); border:1.5px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; font-size:10px; color:white; }
-  .galeria-item.selected .chk { background:var(--accent); border-color:var(--accent); }
-  .galeria-video-badge { position:absolute; bottom:4px; right:4px; background:rgba(0,0,0,0.7); color:var(--yellow); font-size:9px; padding:1px 5px; border-radius:3px; font-weight:700; }
-  .galeria-count { font-size:10px; color:var(--text-dim); margin-left:auto; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 </style>
 </head>
 <body>
 
-<!-- ─── HEADER ─── -->
+<!-- ──────────────────────────────────── -->
+<!-- HEADER                              -->
+<!-- ──────────────────────────────────── -->
 <div class="header">
-  <div class="header-top">
-    <div class="logo">🌺</div>
-    <div class="header-title">
-      <h1>BIO CATTALEYA SCRAPER PRO</h1>
+  <div class="header-row">
+    <div class="logo" aria-hidden="true">🌺</div>
+    <div class="header-meta">
+      <h1>Bio Cattaleya · Scraper Pro</h1>
       <p>Extractor visual · v3.3</p>
     </div>
-    <div class="status-dot">
-      <div class="dot"></div>
+    <div class="status-pill">
+      <div class="status-live"></div>
       <span id="statusText">Listo</span>
     </div>
   </div>
-  <div class="site-info">
-    <span>🌐</span>
+  <div class="site-chip">
+    <span aria-hidden="true">🌐</span>
     <span id="siteUrl">cargando...</span>
   </div>
 </div>
 
-<!-- ─── TABS ─── -->
-<div class="tabs">
-  <div class="tab active" data-tab="extract">
-    <span class="tab-icon">⚡</span>
-    <span>Extractor</span>
+<!-- ──────────────────────────────────── -->
+<!-- TABS                                -->
+<!-- ──────────────────────────────────── -->
+<div class="tabs" role="tablist">
+  <div class="tab active" role="tab" data-tab="config"   aria-selected="true">
+    <span class="tab-icon" aria-hidden="true">⚙️</span> Config
   </div>
-  <div class="tab" data-tab="selector">
-    <span class="tab-icon">🎯</span>
-    <span>Selector</span>
+  <div class="tab" role="tab" data-tab="producto" aria-selected="false">
+    <span class="tab-icon" aria-hidden="true">📦</span> Producto
   </div>
-  <div class="tab" data-tab="listing">
-    <span class="tab-icon">📑</span>
-    <span>Listado</span>
-  </div>
-  <div class="tab" data-tab="preview">
-    <span class="tab-icon">👁</span>
-    <span>Preview</span>
-  </div>
-  <div class="tab" data-tab="datasetup">
-    <span class="tab-icon">🗂</span>
-    <span>Datos</span>
-  </div>
-  <div class="tab" data-tab="export">
-    <span class="tab-icon">📤</span>
-    <span>Exportar</span>
+  <div class="tab" role="tab" data-tab="supabase" aria-selected="false">
+    <span class="tab-icon" aria-hidden="true">🗄</span> Supabase
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════ -->
-<!-- TAB 1: EXTRACTOR                        -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content active" id="tab-extract">
+<!-- ════════════════════════════════════ -->
+<!-- TAB: CONFIG                         -->
+<!-- ════════════════════════════════════ -->
+<div class="tab-content active" id="tab-config" role="tabpanel">
 
-  <!-- Paso 0: OCR Descripción (PRIMER BOTÓN) -->
-  <div class="section-card ocr-card">
-    <div class="section-header" id="hdrOCR">
-      <span class="section-icon">🔍</span>
-      <span class="section-label">0 · Leer Descripción (OCR)</span>
-      <span class="section-badge badge-idle" id="badgeOCR">LISTO</span>
+  <!-- Barra de estado Supabase -->
+  <div class="sb-bar" id="supabaseStatusBar">
+    <span class="dot-sb idle" id="supabaseStatusDot"></span>
+    <span id="supabaseStatusText">Sin configurar — ingresa tus credenciales</span>
+  </div>
+
+  <!-- Conexión Supabase -->
+  <div class="card">
+    <div class="card-hdr" id="hdrSbConfig">
+      <span class="card-hdr-icon">🔌</span>
+      <span class="card-hdr-title">Conexión Supabase</span>
+      <span class="badge badge-idle" id="sbConnBadge">Sin probar</span>
     </div>
-    <div class="section-body" id="bodyOCR">
-      <div class="section-result" id="resultOCR">
-        Lee el texto de las imágenes de descripción del producto,<br>
-        lo traduce al inglés y lo guarda en Descripción.<br>
-        <span style="color:var(--yellow);font-size:10px">⏱ Puede tomar hasta 6 minutos</span>
+    <div class="card-body open" id="bodySbConfig">
+
+      <div class="notice n-green">
+        🔒 Keys guardadas solo en <code>chrome.storage.local</code> — nunca en código fuente
       </div>
-      <div class="ocr-log" id="ocrLog" style="display:none"></div>
-      <button class="btn btn-primary" id="btnOCR" style="background:linear-gradient(135deg,#6d00d6,#ff6ef7)">
-        🔍 Iniciar Lectura OCR
-      </button>
-    </div>
-  </div>
 
-  <!-- Paso 1: Scroll -->
-  <div class="section-card">
-    <div class="section-header" id="hdr1">
-      <span class="section-icon">📜</span>
-      <span class="section-label">1 · Cargar página (Scroll)</span>
-      <span class="section-badge badge-idle" id="badge1">LISTO</span>
-    </div>
-    <div class="section-body" id="body1">
-      <div class="section-result" id="result1">Activa para hacer scroll y cargar imágenes lazy-load.</div>
-      <button class="btn btn-primary" id="btnScroll">▶ Ejecutar Scroll</button>
-    </div>
-  </div>
+      <div class="field">
+        <label class="lbl" for="sbUrl">Supabase Project URL</label>
+        <input type="url" id="sbUrl" class="inp mono"
+               placeholder="https://xxxxxxxxxxxx.supabase.co"
+               autocomplete="off" spellcheck="false" />
+        <span class="hint">Settings → API → Project URL</span>
+      </div>
 
-  <!-- Paso 2: Datos básicos -->
-  <div class="section-card">
-    <div class="section-header" id="hdr2">
-      <span class="section-icon">📦</span>
-      <span class="section-label">2 · Datos del Producto</span>
-      <span class="section-badge badge-idle" id="badge2">LISTO</span>
-    </div>
-    <div class="section-body" id="body2">
-      <div class="section-result" id="result2">Extrae nombre, precio, tienda, calificaciones y specs.</div>
-      <button class="btn btn-primary" id="btnBasicData">▶ Extraer Datos</button>
-    </div>
-  </div>
-
-  <!-- Paso 3: Media -->
-  <div class="section-card">
-    <div class="section-header" id="hdr3">
-      <span class="section-icon">📸</span>
-      <span class="section-label">3 · Imágenes y Video</span>
-      <span class="section-badge badge-idle" id="badge3">LISTO</span>
-    </div>
-    <div class="section-body" id="body3">
-      <div class="section-result" id="result3">Captura imágenes HD y video del producto.</div>
-      <button class="btn btn-primary" id="btnMedia">▶ Capturar Media</button>
-      <div id="galeriaMedia" style="display:none;margin-top:8px">
-        <div class="galeria-toolbar">
-          <button class="btn btn-secondary" id="btnSelAll" style="width:auto;margin-top:0;padding:5px 10px;font-size:10px">☑ Todas</button>
-          <button class="btn btn-secondary" id="btnSelNone" style="width:auto;margin-top:0;padding:5px 10px;font-size:10px">☐ Ninguna</button>
-          <span class="galeria-count"><span id="galeriaSelCount">0</span> sel.</span>
+      <div class="field">
+        <label class="lbl" for="sbAnonKey">Anon / Public Key</label>
+        <div class="inp-wrap">
+          <input type="password" id="sbAnonKey" class="inp mono"
+                 placeholder="eyJhbGciOiJIUzI1NiIs..."
+                 autocomplete="off" spellcheck="false" />
+          <button id="btnToggleKey" type="button" class="eye-btn"
+                  aria-label="Mostrar u ocultar key">👁</button>
         </div>
-        <div class="galeria-grid" id="galeriaGrid"></div>
-        <div style="margin-top:8px">
-          <input
-            class="input-field"
-            type="text"
-            id="inputNombreCarpeta"
-            placeholder="nombre de carpeta (ej: vestido_floral_verano)"
-            style="width:100%;margin-bottom:6px"
-          />
-          <div class="btn-row">
-            <button class="btn btn-green" id="btnDescargarSel" style="font-size:11px">⬇ Descargar sel.</button>
-            <button class="btn btn-secondary" id="btnNotionSel" style="font-size:11px">🗃 → Notion</button>
+        <span class="hint">Usar anon key — nunca service_role en el cliente</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btnSbSave">💾 Guardar</button>
+        <button class="btn btn-secondary" id="btnSbTest">⚡ Probar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OCR toggle -->
+  <div class="card">
+    <div class="card-hdr" id="hdrOcrToggle">
+      <span class="card-hdr-icon">🔍</span>
+      <span class="card-hdr-title">OCR precio Tmall</span>
+    </div>
+    <div class="card-body open" id="bodyOcrToggle">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">Activar OCR automático</div>
+          <div class="toggle-sub">Lee el precio desde la imagen del producto</div>
+        </div>
+        <label class="sw">
+          <input type="checkbox" id="toggleOCR">
+          <span class="sw-track"></span>
+        </label>
+      </div>
+      <div class="notice n-amber" style="margin-top:8px;margin-bottom:0">
+        ⚠️ Requiere Tesseract.js — puede tomar hasta 6 min por producto
+      </div>
+    </div>
+  </div>
+
+  <!-- Checklist de seguridad -->
+  <div class="card">
+    <div class="card-hdr" id="hdrSecCheck">
+      <span class="card-hdr-icon">🛡</span>
+      <span class="card-hdr-title">Checklist de seguridad Supabase</span>
+    </div>
+    <div class="card-body" id="bodySecCheck">
+      <ul class="sec-list" style="margin-top:4px">
+        <li>
+          <span class="sec-icon">✅</span>
+          <span>Keys en <code>chrome.storage.local</code>, nunca en código fuente</span>
+        </li>
+        <li>
+          <span class="sec-icon">✅</span>
+          <span>Se usa anon key — nunca service_role en el cliente</span>
+        </li>
+        <li>
+          <span class="sec-icon">✅</span>
+          <span>RLS habilitado en tabla <code>products</code></span>
+        </li>
+        <li>
+          <span class="sec-icon">🟡</span>
+          <span>Política INSERT para rol anon — pendiente de verificar</span>
+        </li>
+        <li>
+          <span class="sec-icon">🟡</span>
+          <span>Bucket <code>productos</code> en Storage — acceso público pendiente</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Flujo de integración -->
+  <div class="card">
+    <div class="card-hdr" id="hdrFlow">
+      <span class="card-hdr-icon">🔄</span>
+      <span class="card-hdr-title">Flujo de integración</span>
+    </div>
+    <div class="card-body" id="bodyFlow">
+      <div style="margin-top:6px">
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-dot"></div><div class="flow-conn"></div></div>
+          <div class="flow-body">
+            <div class="flow-name">Extensión Chrome</div>
+            <div class="flow-desc">Scraping Tmall → INSERT en Supabase</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-dot"></div><div class="flow-conn"></div></div>
+          <div class="flow-body">
+            <div class="flow-name">Supabase DB</div>
+            <div class="flow-desc">Trigger SQL → notify_make_webhook()</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-dot"></div><div class="flow-conn"></div></div>
+          <div class="flow-body">
+            <div class="flow-name">Make.com</div>
+            <div class="flow-desc">Router 6 rutas por notion_list</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-dot"></div></div>
+          <div class="flow-body">
+            <div class="flow-name">Notion</div>
+            <div class="flow-desc">6 listas separadas por categoría</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Paso 4: Paginación -->
-  <div class="section-card">
-    <div class="section-header" id="hdr4">
-      <span class="section-icon">📄</span>
-      <span class="section-label">4 · Detectar Paginación</span>
-      <span class="section-badge badge-idle" id="badge4">LISTO</span>
+</div><!-- /tab-config -->
+
+<!-- ════════════════════════════════════ -->
+<!-- TAB: PRODUCTO                        -->
+<!-- ════════════════════════════════════ -->
+<div class="tab-content" id="tab-producto" role="tabpanel">
+
+  <!-- Pasos de extracción -->
+  <div class="card">
+    <div class="card-hdr" id="hdrSteps">
+      <span class="card-hdr-icon">⚡</span>
+      <span class="card-hdr-title">Pasos de extracción</span>
     </div>
-    <div class="section-body" id="body4">
-      <div class="section-result" id="result4">Detecta si hay botón "Siguiente página".</div>
-      <button class="btn btn-primary" id="btnPagination">▶ Detectar</button>
+    <div class="card-body open" id="bodySteps">
+      <ul class="step-list">
+        <li class="step-item">
+          <div class="step-num" id="stepNum0">0</div>
+          <span class="step-lbl">Leer descripción (OCR)</span>
+          <span class="step-res" id="resultOCR">—</span>
+          <button class="step-btn" id="btnOCR">Iniciar</button>
+        </li>
+        <li class="step-item">
+          <div class="step-num" id="stepNum1">1</div>
+          <span class="step-lbl">Scroll — cargar imágenes</span>
+          <span class="step-res" id="result1">—</span>
+          <button class="step-btn" id="btnScroll">Ejecutar</button>
+        </li>
+        <li class="step-item">
+          <div class="step-num" id="stepNum2">2</div>
+          <span class="step-lbl">Datos del producto</span>
+          <span class="step-res" id="result2">—</span>
+          <button class="step-btn" id="btnBasicData">Extraer</button>
+        </li>
+        <li class="step-item">
+          <div class="step-num" id="stepNum3">3</div>
+          <span class="step-lbl">Imágenes y video</span>
+          <span class="step-res" id="result3">—</span>
+          <button class="step-btn" id="btnMedia">Capturar</button>
+        </li>
+        <li class="step-item">
+          <div class="step-num" id="stepNum4">4</div>
+          <span class="step-lbl">Detectar paginación</span>
+          <span class="step-res" id="result4">—</span>
+          <button class="step-btn" id="btnPagination">Detectar</button>
+        </li>
+      </ul>
+
+      <!-- Log OCR — visible solo mientras corre -->
+      <div class="log-box" id="ocrLog" style="display:none"></div>
+
+      <button class="btn btn-secondary btn-w" id="btnResetData"
+              style="margin-top:10px;font-size:11px">
+        🔄 Reiniciar todos los datos
+      </button>
     </div>
   </div>
 
-  <button class="btn btn-secondary" id="btnResetData">🔄 Reiniciar todos los datos</button>
-</div>
+  <!-- Panel izquierdo: datos base -->
+  <div class="card">
+    <div class="card-hdr" id="hdrDatosBase">
+      <span class="card-hdr-icon">📋</span>
+      <span class="card-hdr-title">Panel izquierdo — datos base</span>
+      <span class="badge badge-ok" id="badgeDatosBase">✅ Capturado</span>
+    </div>
+    <div class="card-body open" id="bodyDatosBase">
 
-<!-- ═══════════════════════════════════════ -->
-<!-- TAB 2: SELECTOR VISUAL                 -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content" id="tab-selector">
+      <div class="field">
+        <label class="lbl" for="pvNombre">Nombre del producto</label>
+        <input type="text" id="pvNombre" class="inp"
+               placeholder="(se llena al extraer datos)" />
+      </div>
 
-  <div class="selector-waiting" id="selectorWaiting">
-    🎯 Haz clic en cualquier elemento de la página…
-    <br><small>ESC para cancelar</small>
+      <div class="grid-2" style="margin-bottom:10px">
+        <div class="field" style="margin:0">
+          <label class="lbl" for="pvSku">SKU</label>
+          <input type="text" id="pvSku" class="inp mono"
+                 placeholder="BCS-CN-0001" />
+        </div>
+        <div class="field" style="margin:0">
+          <label class="lbl" for="sbSupplierCode">Proveedor</label>
+          <input type="text" id="sbSupplierCode" class="inp"
+                 placeholder="SUP-0001" value="SUP-0001" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="pvDesc">Descripción</label>
+        <textarea id="pvDesc" class="inp" rows="3"
+                  placeholder="(se llena con OCR o edita manualmente)"></textarea>
+      </div>
+
+    </div>
   </div>
 
-  <div class="input-row">
-    <input class="input-field" type="text" id="campoNombre" placeholder="Nombre del campo (ej: precio_oferta)" />
-    <select class="input-field" id="campoTipo" style="width:100px;flex:0 0 100px">
-      <option value="texto">Texto</option>
-      <option value="lista">Lista</option>
-      <option value="imagen">Imagen</option>
-      <option value="enlace">Enlace</option>
-      <option value="numero">Número</option>
-    </select>
+  <!-- Panel derecho: variaciones -->
+  <div class="card">
+    <div class="card-hdr" id="hdrVariaciones">
+      <span class="card-hdr-icon">🎨</span>
+      <span class="card-hdr-title">Panel derecho — variaciones</span>
+      <span class="badge badge-warn">🔧 Nuevo</span>
+    </div>
+    <div class="card-body open" id="bodyVariaciones">
+
+      <div class="chips-lbl">Precio</div>
+      <div class="price-grid">
+        <div class="price-col cny">
+          <div class="price-lbl">CNY · Tmall</div>
+          <div class="price-val" id="pvPrecio">—</div>
+          <div class="ocr-tag">🔍 OCR</div>
+        </div>
+        <div class="price-col usd">
+          <div class="price-lbl">Costo USD</div>
+          <input type="number" id="sbCostUSD" class="inp"
+                 placeholder="0.00" step="0.01" min="0"
+                 aria-label="Costo en dólares" />
+        </div>
+        <div class="price-col cop">
+          <div class="price-lbl">Precio venta COP</div>
+          <input type="number" id="sbPriceCOP" class="inp"
+                 placeholder="0" min="0"
+                 aria-label="Precio de venta en pesos" />
+        </div>
+      </div>
+
+      <div class="margin-bar">
+        <span class="m-rate">Margen estimado</span>
+        <span class="m-val" id="pvMargen">— %</span>
+        <span class="m-rate">Tasa COP/USD: <strong>4.200</strong></span>
+      </div>
+
+      <!-- Tallas -->
+      <div class="chips-section">
+        <div class="chips-lbl">Tallas</div>
+        <div class="chips-wrap" id="chipsWrapTallas">
+          <span class="chip chip-empty">Sin datos — extrae primero</span>
+        </div>
+      </div>
+
+      <!-- Colores -->
+      <div class="chips-section">
+        <div class="chips-lbl">Colores</div>
+        <div class="chips-wrap" id="chipsWrapColores">
+          <span class="chip chip-empty">Sin datos</span>
+        </div>
+      </div>
+
+      <!-- Kits / Combinaciones -->
+      <div class="chips-section">
+        <div class="chips-lbl">Kits / Combinaciones</div>
+        <div class="chips-wrap" id="chipsWrapKits">
+          <span class="chip chip-empty">Sin datos</span>
+        </div>
+      </div>
+
+      <!-- Variantes con stock -->
+      <div style="margin-top:10px">
+        <div class="chips-lbl">Variantes con stock</div>
+        <div class="var-wrap">
+          <table class="var-table">
+            <thead>
+              <tr>
+                <th>Talla</th>
+                <th>Color</th>
+                <th>Stock</th>
+              </tr>
+            </thead>
+            <tbody id="variantesTableBody">
+              <tr>
+                <td colspan="3"
+                    style="text-align:center;color:var(--text-muted);font-size:10px;padding:10px 8px">
+                  Pendiente — scraper panel derecho Tmall (Bug #5)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
   </div>
-  <button class="btn btn-primary" id="btnActivarSelector" style="margin-top:8px">
-    🎯 Seleccionar elemento en la página
+
+  <!-- Imágenes scrapeadas -->
+  <div class="card">
+    <div class="card-hdr" id="hdrGaleria">
+      <span class="card-hdr-icon">📸</span>
+      <span class="card-hdr-title">Imágenes scrapeadas</span>
+      <span class="badge badge-sky" id="imgCount">0</span>
+    </div>
+    <div class="card-body" id="bodyGaleria">
+      <div id="galeriaMedia">
+        <div class="gallery-toolbar">
+          <button class="btn btn-secondary" id="btnSelAll"
+                  style="padding:4px 9px;font-size:10px">☑ Todas</button>
+          <button class="btn btn-secondary" id="btnSelNone"
+                  style="padding:4px 9px;font-size:10px">☐ Ninguna</button>
+          <span class="gallery-count">
+            <span id="galeriaSelCount">0</span> sel.
+          </span>
+        </div>
+        <div class="galeria-grid" id="galeriaGrid"></div>
+        <div style="margin-top:8px">
+          <input class="inp" type="text" id="inputNombreCarpeta"
+                 placeholder="nombre de carpeta (ej: vestido_floral_verano)"
+                 style="margin-bottom:6px" />
+          <div class="btn-row">
+            <button class="btn btn-green" id="btnDescargarSel"
+                    style="font-size:11px">⬇ Descargar sel.</button>
+            <button class="btn btn-secondary" id="btnNotionSel"
+                    style="font-size:11px">🗃 Notion</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    Campos que popup.js actualiza por ID pero que no se muestran
+    visualmente en este tab. Se mantienen para compatibilidad.
+  -->
+  <div style="display:none" aria-hidden="true">
+    <span id="pvTienda"></span>
+    <span id="pvRating"></span>
+    <span id="pvSpecs"></span>
+    <span id="pvCustom"></span>
+    <div  id="imgPreview"></div>
+  </div>
+
+  <!-- Barra URL del producto -->
+  <div class="url-bar">
+    <span aria-hidden="true">🔗</span>
+    <span id="pvUrl">Extrae un producto para ver la URL</span>
+  </div>
+
+</div><!-- /tab-producto -->
+
+<!-- ════════════════════════════════════ -->
+<!-- TAB: SUPABASE                        -->
+<!-- ════════════════════════════════════ -->
+<div class="tab-content" id="tab-supabase" role="tabpanel">
+
+  <!-- Banner: sin configurar -->
+  <div class="notice n-violet" id="sbConfigBanner">
+    ⚙️ Configura la conexión en la pestaña <strong>Config</strong> primero
+  </div>
+
+  <!-- Stats 2×2 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-name">products</div>
+      <div class="stat-val" id="statProducts">—</div>
+      <div class="stat-sub">filas en tabla</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-name">pricing</div>
+      <div class="stat-val" id="statPricing">—</div>
+      <div class="stat-sub">filas en tabla</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-name">product_suppliers</div>
+      <div class="stat-val" id="statSuppliers">—</div>
+      <div class="stat-sub">filas en tabla</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-name">inventory</div>
+      <div class="stat-val" id="statInventory">—</div>
+      <div class="stat-sub">filas en tabla</div>
+    </div>
+  </div>
+
+  <!-- Producto scrapeado (preview) -->
+  <div class="card">
+    <div class="card-hdr" id="hdrSbInsert">
+      <span class="card-hdr-icon">📦</span>
+      <span class="card-hdr-title">Producto scrapeado</span>
+      <span class="badge badge-idle" id="badgeSbInsert">LISTO</span>
+    </div>
+    <div class="card-body open" id="bodySbInsert">
+      <div class="prev-row">
+        <span class="prev-key">SKU</span>
+        <span class="prev-val mono" id="sbPrevSku">— extrae un producto primero</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Nombre</span>
+        <span class="prev-val" id="sbPrevName">—</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Precio</span>
+        <span class="prev-val mono" id="sbPrevPrice">—</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Imágenes</span>
+        <span class="prev-val" id="sbPrevImages">—</span>
+      </div>
+      <div class="prev-row">
+        <span class="prev-key">Variantes</span>
+        <span class="prev-val" id="sbPrevVariants">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview JSON -->
+  <div class="card">
+    <div class="card-hdr" id="hdrJsonPreview">
+      <span class="card-hdr-icon">🔒</span>
+      <span class="card-hdr-title">Preview del insert (JSON)</span>
+    </div>
+    <div class="card-body" id="bodyJsonPreview">
+      <div class="json-box" id="jsonPreviewContent">
+        { "sku": "—", "name": "—", "images": [], "variants": [] }
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón guardar -->
+  <button class="btn btn-dark btn-w" id="btnInsertSupabase" disabled>
+    🗄 Guardar en Supabase
   </button>
-  <p style="font-size:10px;color:var(--text-dim);margin-top:8px;line-height:1.45">
-    Este panel lateral de Chrome permanece abierto al hacer clic en la página (como otras extensiones).
-  </p>
 
-  <div class="divider"></div>
+  <!-- Garantías de seguridad -->
+  <ul class="sec-list" style="margin-top:12px">
+    <li>
+      <span class="sec-icon">✅</span>
+      <span>Datos enviados directo vía REST API — sin servidores intermedios</span>
+    </li>
+    <li>
+      <span class="sec-icon">✅</span>
+      <span>Tu Supabase, tus datos — cero acceso de terceros</span>
+    </li>
+    <li>
+      <span class="sec-icon">✅</span>
+      <span>Trigger automático → Make.com → Notion en cada INSERT</span>
+    </li>
+    <li>
+      <span class="sec-icon">✅</span>
+      <span>Token rotado — nunca expuesto en código fuente</span>
+    </li>
+  </ul>
 
-  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600;">
-    CAMPOS DEFINIDOS <span id="camposCount" class="tag">0</span>
+  <!-- Log de operaciones -->
+  <div id="sbLogWrap" style="display:none;margin-top:10px">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-hdr-icon">📋</span>
+        <span class="card-hdr-title">Log de operaciones</span>
+      </div>
+      <div class="card-body open"
+           id="sbLog"
+           style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                  color:var(--text-dim);max-height:120px;overflow-y:auto;line-height:1.8">
+      </div>
+    </div>
   </div>
-  <div id="camposList"></div>
 
-  <div class="divider"></div>
-
-  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600;">SELECTOR MANUAL</div>
-  <div class="input-row">
-    <input class="input-field" type="text" id="manualNombre" placeholder="Nombre" />
-    <input class="input-field" type="text" id="manualSelector" placeholder="CSS selector" />
+  <!-- Sección de exportar -->
+  <div class="divider" style="margin-top:14px"></div>
+  <div style="font-size:10px;font-weight:700;color:var(--text-dim);
+              text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+    Exportar datos
   </div>
-  <button class="btn btn-secondary" id="btnManualAdd" style="margin-top:6px">+ Agregar Manual</button>
-
-  <div class="divider"></div>
-  <button class="btn btn-primary" id="btnExtractSchema">⚡ Extraer con mis Campos</button>
-</div>
-
-<!-- ═══════════════════════════════════════ -->
-<!-- TAB: LISTADO (búsqueda / rejilla)      -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content" id="tab-listing">
-
-  <div class="section-result" id="listingDetectResult">
-    En páginas de búsqueda o tienda con muchos productos: detecta, opcionalmente haz scroll para cargar más, y escanea.
-  </div>
-
   <div class="btn-row">
-    <button class="btn btn-secondary" id="btnDetectListing" style="margin-top:8px;flex:1">🔎 Detectar</button>
-    <button class="btn btn-secondary" id="btnScrollListing" style="margin-top:8px;flex:1">📜 Scroll</button>
+    <button class="btn btn-secondary" id="btnExportJSON">📋 JSON</button>
+    <button class="btn btn-secondary" id="btnExportCSV">📊 CSV</button>
+    <button class="btn btn-secondary" id="btnExportAll">📦 Ambos</button>
   </div>
-  <button class="btn btn-primary" id="btnScanListing">📑 Escanear productos del listado</button>
-
-  <div style="font-size:10px;color:var(--text-dim);margin-top:8px;line-height:1.45">
-    Columnas: nombre · precio · compradores (si figura) · URL · imagen principal.
-  </div>
-
-  <div class="listing-table-wrap" id="listingTableWrap" style="display:none">
-    <table class="listing-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Img</th>
-          <th>Nombre</th>
-          <th>¥</th>
-          <th>Compradores</th>
-          <th>URL</th>
-        </tr>
-      </thead>
-      <tbody id="listingTableBody"></tbody>
-    </table>
+  <div class="btn-row" style="margin-top:6px">
+    <button class="btn btn-secondary" id="btnSendPython">🐍 Python</button>
+    <button class="btn btn-secondary" id="btnGuardarListado">💾 Listado</button>
+    <button class="btn btn-secondary" id="btnCheckPython"
+            style="flex:0 0 auto;padding:8px 10px" aria-label="Verificar servidor">↻</button>
   </div>
 
-  <button class="btn btn-green" id="btnExportListingCSV" style="margin-top:10px;display:none">📊 Exportar listado CSV</button>
-</div>
-
-<!-- ═══════════════════════════════════════ -->
-<!-- TAB 3: PREVIEW                         -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content" id="tab-preview">
-  <button class="btn btn-secondary" id="btnRefreshPreview">↻ Actualizar Preview</button>
-
-  <div class="preview-grid" id="previewGrid" style="margin-top:10px">
-    <div class="preview-item">
-      <div class="preview-label">Nombre</div>
-      <div class="preview-value" id="pvNombre">—</div>
-    </div>
-    <div class="preview-item">
-      <div class="preview-label">Precio</div>
-      <div class="preview-value mono" id="pvPrecio">—</div>
-    </div>
-    <div class="preview-item">
-      <div class="preview-label">Tienda</div>
-      <div class="preview-value" id="pvTienda">—</div>
-    </div>
-    <div class="preview-item">
-      <div class="preview-label">Calificación</div>
-      <div class="preview-value" id="pvRating">—</div>
-    </div>
-    <div class="preview-item" style="grid-column:1/-1">
-      <div class="preview-label">Especificaciones</div>
-      <div class="preview-value" id="pvSpecs" style="white-space:normal;font-size:10px;line-height:1.5">—</div>
-    </div>
-    <div class="preview-item" style="grid-column:1/-1">
-      <div class="preview-label">Campos Custom</div>
-      <div class="preview-value" id="pvCustom" style="white-space:normal;font-size:10px;line-height:1.5">—</div>
-    </div>
+  <!--
+    pythonStatus: popup.js accede al hijo <div> por querySelector.
+    Se mantiene oculto visualmente — solo funcional.
+  -->
+  <div id="pythonStatus" style="display:none" aria-hidden="true">
+    <div></div>
   </div>
 
-  <div style="font-size:11px;color:var(--text-dim);margin:10px 0 5px;font-weight:600;">
-    IMÁGENES <span id="imgCount" class="tag">0</span>
-  </div>
-  <div class="img-preview" id="imgPreview"></div>
-</div>
-
-<!-- ═══════════════════════════════════════ -->
-<!-- TAB: DATA SETUP — revisión pre-export  -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content" id="tab-datasetup">
-
-  <div style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:8px">
-    <strong style="color:var(--accent-2)">Revisión de datos</strong> — Tabla con scroll horizontal y vertical. Confirma el contenido antes de ir a <b>Exportar</b>.
+  <div id="exportStatus" class="export-status"></div>
+  <div id="descargaProgreso"
+       style="display:none;font-size:10px;color:var(--text-dim);margin-top:6px">
   </div>
 
-  <button class="btn btn-secondary" id="btnDataSetupRefresh">↻ Sincronizar con la página</button>
+</div><!-- /tab-supabase -->
 
-  <div class="section-result success" id="dataSetupSummary" style="margin-top:8px;font-size:10px">
-    Pulsa sincronizar para cargar listado y ficha.
+<!--
+  ════════════════════════════════════════════════════════════
+  LEGACY ZONE
+  IDs que popup.js referencia pero que no aparecen
+  visualmente en los 3 tabs nuevos.
+  IMPORTANTE: nunca eliminar estos elementos.
+  ════════════════════════════════════════════════════════════
+-->
+<div id="legacy-zone" style="display:none" aria-hidden="true">
+
+  <!-- Acordeones que popup.js registra via setupAcordeon() -->
+  <div id="hdrOCR"><div id="bodyOCR"></div></div>
+  <div id="hdr1">  <div id="body1"></div>  </div>
+  <div id="hdr2">  <div id="body2"></div>  </div>
+  <div id="hdr3">  <div id="body3"></div>  </div>
+  <div id="hdr4">  <div id="body4"></div>  </div>
+
+  <!-- Badges que popup.js actualiza por ID -->
+  <span id="badgeOCR">LISTO</span>
+  <span id="badge1">LISTO</span>
+  <span id="badge2">LISTO</span>
+  <span id="badge3">LISTO</span>
+  <span id="badge4">LISTO</span>
+
+  <!-- Selector visual -->
+  <div id="selectorWaiting"></div>
+  <input id="campoNombre"  type="text" />
+  <select id="campoTipo">
+    <option value="texto">Texto</option>
+    <option value="lista">Lista</option>
+    <option value="imagen">Imagen</option>
+    <option value="enlace">Enlace</option>
+    <option value="numero">Número</option>
+  </select>
+  <button id="btnActivarSelector"></button>
+  <div id="camposList"></div>
+  <span id="camposCount">0</span>
+  <input id="manualNombre"   type="text" />
+  <input id="manualSelector" type="text" />
+  <button id="btnManualAdd"></button>
+  <button id="btnExtractSchema"></button>
+
+  <!-- Preview legacy -->
+  <button id="btnRefreshPreview"></button>
+
+  <!-- Listado legacy -->
+  <div id="listingDetectResult"></div>
+  <button id="btnDetectListing"></button>
+  <button id="btnScrollListing"></button>
+  <button id="btnScanListing"></button>
+  <div id="listingTableWrap">
+    <table><tbody id="listingTableBody"></tbody></table>
   </div>
+  <button id="btnExportListingCSV"></button>
 
-  <dl class="data-setup-single-card" id="dataSetupSingleCard">
-    <dt>Producto actual (ficha)</dt>
-    <dd id="dataSetupSingleNombre">—</dd>
-    <dt>Precio</dt>
-    <dd id="dataSetupSinglePrecio">—</dd>
-    <dt>Tienda</dt>
-    <dd id="dataSetupSingleTienda">—</dd>
-    <dt>URL</dt>
-    <dd id="dataSetupSingleUrl" style="font-size:10px;font-family:monospace">—</dd>
-    <dt>Imágenes / Video</dt>
-    <dd id="dataSetupSingleMedia">—</dd>
+  <!-- DataSetup legacy -->
+  <button id="btnDataSetupRefresh"></button>
+  <div id="dataSetupSummary"></div>
+  <dl id="dataSetupSingleCard">
+    <dd id="dataSetupSingleNombre"></dd>
+    <dd id="dataSetupSinglePrecio"></dd>
+    <dd id="dataSetupSingleTienda"></dd>
+    <dd id="dataSetupSingleUrl"></dd>
+    <dd id="dataSetupSingleMedia"></dd>
   </dl>
-
-  <div class="data-setup-scroll-wrap" id="dataSetupScrollWrap">
-    <table class="data-setup-table" id="dataSetupTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Imagen</th>
-          <th class="col-nombre">Nombre</th>
-          <th>Precio</th>
-          <th>Compradores</th>
-          <th class="col-url">URL del producto</th>
-        </tr>
-      </thead>
-      <tbody id="dataSetupTableBody"></tbody>
-    </table>
+  <div id="dataSetupScrollWrap">
+    <table><tbody id="dataSetupTableBody"></tbody></table>
   </div>
+  <p id="dataSetupEmpty"></p>
 
-  <p id="dataSetupEmpty" style="font-size:11px;color:var(--text-dim);text-align:center;padding:14px 8px;line-height:1.5">
-    No hay filas de listado. En la pestaña <b>Listado</b> pulsa «Escanear productos», o extrae una ficha en <b>Extractor</b>.
-  </p>
-</div>
+  <!-- Export legacy -->
+  <button id="btnExportExcel"></button>
+  <input  type="checkbox" id="toggleDescargarImagenes" />
 
-<!-- ═══════════════════════════════════════ -->
-<!-- TAB 4: EXPORTAR                        -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content" id="tab-export">
+</div><!-- /legacy-zone -->
 
-  <div class="python-status" id="pythonStatus">
-    <div class="dot-py"></div>
-    <div>
-      <div style="font-weight:600;font-size:11px;color:var(--green)">Receptor Python</div>
-      <div style="font-size:10px;color:var(--text-dim)">Verificando conexión...</div>
-    </div>
-    <button class="btn btn-secondary" id="btnCheckPython" style="width:auto;margin-top:0;padding:4px 10px;font-size:10px;">↻</button>
-  </div>
-
-  <div class="export-option" id="btnExportJSON">
-    <span class="export-icon">📋</span>
-    <div class="export-info">
-      <div class="export-title">Exportar JSON</div>
-      <div class="export-desc">Todos los datos en formato JSON estructurado</div>
-    </div>
-    <span class="export-arrow">›</span>
-  </div>
-
-  <div class="export-option" id="btnExportCSV">
-    <span class="export-icon">📊</span>
-    <div class="export-info">
-      <div class="export-title">Exportar CSV</div>
-      <div class="export-desc">Compatible con Excel, Google Sheets</div>
-    </div>
-    <span class="export-arrow">›</span>
-  </div>
-
-  <div class="export-option" id="btnSendPython">
-    <span class="export-icon">🐍</span>
-    <div class="export-info">
-      <div class="export-title">Enviar a Python → Excel</div>
-      <div class="export-desc">Guarda en Maestro_BioCattaleya.xlsx + descarga media</div>
-    </div>
-    <span class="export-arrow">›</span>
-  </div>
-
-  <div class="export-option" id="btnExportAll">
-    <span class="export-icon">📦</span>
-    <div class="export-info">
-      <div class="export-title">Exportar Todo (JSON + CSV)</div>
-      <div class="export-desc">Descarga ambos archivos simultáneamente</div>
-    </div>
-    <span class="export-arrow">›</span>
-  </div>
-
-  <div class="divider" style="margin:12px 0"></div>
-
-  <!-- Mejora #5: Productos_BSC -->
-  <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;font-weight:600;">
-    GUARDAR EN CARPETAS JERÁRQUICAS
-  </div>
-
-  <button class="btn btn-primary" id="btnGuardarListado">
-    💾 Guardar listado
-  </button>
-
-  <button class="btn btn-green" id="btnExportExcel" style="display:none;margin-top:6px">
-    📊 Exportar Excel
-  </button>
-
-  <div style="margin-top:10px">
-    <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-dim);cursor:pointer">
-      <input type="checkbox" id="toggleDescargarImagenes" style="margin:0">
-      <span>Descargar imágenes</span>
-    </label>
-  </div>
-
-  <div id="descargaProgreso" class="section-result" style="margin-top:8px;display:none;font-size:10px"></div>
-
-  <div id="exportStatus" class="section-result" style="margin-top:8px;display:none"></div>
-</div>
-
-<!-- ─── FOOTER ─── -->
+<!-- ──────────────────────────────────── -->
+<!-- FOOTER                              -->
+<!-- ──────────────────────────────────── -->
 <div class="footer">
-  <button class="btn btn-green" id="btnExportMain">
-    ⚡ EXTRAER TODO Y EXPORTAR
+  <button class="btn btn-primary btn-w" id="btnExportMain">
+    ⚡ Extraer todo y exportar
   </button>
 </div>
 
@@ -949,5 +1146,4 @@
 <script src="config.js"></script>
 <script src="popup.js"></script>
 </body>
-</html>
-l
+</html> 

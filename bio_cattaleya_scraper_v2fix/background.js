@@ -4,6 +4,7 @@
 
 importScripts('config.js');
 importScripts('secureStorage.js');
+importScripts('src/utils/supabase.js');
 
 let licenseValidationInterval = null;
 let isValidationInProgress = false;
@@ -244,8 +245,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
+  // ── SUPABASE INSERT ──────────────────────────────────────
+  if (message.action === 'supabase_insert') {
+    enviarProductoASupabase(message.producto)
+      .then(result => sendResponse(result))
+      .catch(e => sendResponse({ ok: false, error: e.message }));
+    return true; // ← obligatorio para respuesta async
+  }
 
 });
+
 
 // ─── DESCARGA DE ARCHIVOS ─────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

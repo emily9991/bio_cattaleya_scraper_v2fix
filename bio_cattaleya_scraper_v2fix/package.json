@@ -1,12 +1,12 @@
-﻿{
+{
   "name": "bio_cattaleya_scraper_v2fix",
   "version": "1.0.0",
   "type": "module",
   "main": "background.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:dev": "webpack --mode development",
-    "build:prod": "webpack --mode production",
+    "build:dev": "webpack --config webpack.config.cjs --mode development",
+    "build:prod": "webpack --config webpack.config.cjs --mode production",
     "lint": "eslint src/ background.js content.js --ext .js"
   },
   "keywords": [],
