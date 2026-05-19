@@ -34,12 +34,13 @@ function sanitizeInput(str) {
   let s = String(str || '').trim();
   let prev;
   do { prev = s; s = s.replace(/<[^>]*>/g, ''); } while (s !== prev);
-  return s
-    .replace(/[<>"'`]/g, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+\s*=/gi, '')
-    .trim()
-    .slice(0, 500);
+  s = s.replace(/\s+/g, ' ')
+       .replace(/&#?\w+;/g, '')
+       .replace(/[<>"'`]/g, '');
+  if (/^(javascript|data|vbscript)\s*:/i.test(s.trim())) {
+    s = '';
+  }
+  return s.trim().slice(0, 500);
 }
 
 // ─── TEST DE CONEXIÓN ────────────────────────────────────────
