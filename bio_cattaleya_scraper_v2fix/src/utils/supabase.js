@@ -31,9 +31,13 @@ function buildSupabaseHeaders(key) {
 
 // Elimina HTML, scripts y caracteres peligrosos antes de enviar a la DB
 function sanitizeInput(str) {
-  return String(str || '')
-    .replace(/<[^>]*>/g, '')       // strip HTML tags
-    .replace(/[<>"'`]/g, '')       // strip dangerous chars
+  let s = String(str || '').trim();
+  let prev;
+  do { prev = s; s = s.replace(/<[^>]*>/g, ''); } while (s !== prev);
+  return s
+    .replace(/[<>"'`]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
     .trim()
     .slice(0, 500);
 }

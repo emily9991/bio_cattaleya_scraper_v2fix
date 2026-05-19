@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('sbCostUSD')?.addEventListener('input', calcularMargen);
   document.getElementById('sbPriceCOP')?.addEventListener('input', calcularMargen);
 
-  // ── PASO 0: OCR ──────────────────────────────────────────
+  // ── PASO 0: OCR — corre en sidepanel (Tesseract disponible aquí) ──
   document.getElementById('btnOCR').addEventListener('click', async () => {
     const badge  = document.getElementById('badgeOCR');
     const result = document.getElementById('resultOCR');
@@ -114,38 +114,126 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (logEl) { logEl.style.display = 'block'; logEl.innerHTML = ''; }
     result.textContent = '';
 
-    const progressListener = (message) => {
-      if (message.action === 'ocr_progress') {
-        const line = document.createElement('span');
-        line.className   = 'log-line';
-        line.textContent = message.msg;
-        if (logEl) { logEl.appendChild(line); logEl.scrollTop = logEl.scrollHeight; }
-        setStatus(message.msg.slice(0, 30));
-      }
-    };
-    chrome.runtime.onMessage.addListener(progressListener);
+    function logOcr(msg) {
+      if (!logEl) return;
+      const line = document.createElement('span');
+      line.className   = 'log-line';
+      line.textContent = msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      setStatus(msg.slice(0, 40));
+    }
 
     const tab = await getActiveTab();
-    if (!tab?.id) return;
-    const res = await enviarMensaje(tab.id, { action: 'do_ocr' });
-    chrome.runtime.onMessage.removeListener(progressListener);
-
-    if (!res) {
+    if (!tab?.id) {
       badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
       if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
-      result.textContent  = 'Sin respuesta — abre una ficha Tmall, recarga (F5) y reintenta';
-      result.className    = 'step-res err';
-    } else if (res.status === 'ok') {
+      result.textContent = 'Sin pestaña activa'; result.className = 'step-res err';
+      btn.textContent = 'Iniciar'; btn.disabled = false; btn.classList.remove('running');
+      return;
+    }
+
+    // 1. Obtener imágenes de descripción desde content.js
+    const datos = await enviarMensaje(tab.id, { action: 'get_all_data' });
+    const imagenesDesc = datos?.imagenes_descripcion || [];
+
+    if (!imagenesDesc.length) {
+      badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
+      if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
+      result.textContent = 'Ejecuta primero el Paso 3 (Imágenes)';
+      result.className   = 'step-res err';
+      btn.textContent = 'Iniciar'; btn.disabled = false; btn.classList.remove('running');
+      return;
+    }
+
+    logOcr(`Iniciando OCR — ${imagenesDesc.length} imágenes de descripción`);
+
+    // 2. Inicializar Tesseract en el sidepanel
+    let worker = null;
+    try {
+      logOcr('Cargando modelo chi_sim+eng…');
+      const langPath = chrome.runtime.getURL('lib/');
+      worker = await Tesseract.createWorker('chi_sim+eng', 1, {
+        workerPath: chrome.runtime.getURL('lib/worker.min.js'),
+        langPath:   langPath,
+        corePath:   chrome.runtime.getURL('lib/tesseract-core-simd-lstm.wasm.js'),
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            logOcr('Leyendo… ' + Math.round((m.progress || 0) * 100) + '%');
+          }
+        }
+      });
+      logOcr('✓ Modelo cargado');
+    } catch(e) {
+      badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
+      if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
+      result.textContent = 'Error cargando Tesseract: ' + e.message;
+      result.className   = 'step-res err';
+      btn.textContent = 'Iniciar'; btn.disabled = false; btn.classList.remove('running');
+      return;
+    }
+
+    // 3. Procesar cada imagen
+    const limite     = Math.min(imagenesDesc.length, 15);
+    const textoTotal = [];
+    let procesadas   = 0;
+
+    for (let i = 0; i < limite; i++) {
+      const url = imagenesDesc[i];
+      logOcr(`Imagen ${i + 1}/${limite}…`);
+
+      try {
+        // fetch base64 via background
+        const b64 = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'fetch_image_b64', url }, res => {
+            resolve(res?.b64 || null);
+          });
+        });
+
+        if (!b64) { logOcr(`⚠️ Img ${i + 1} no disponible`); continue; }
+
+        const res = await worker.recognize(b64);
+        const texto = res?.data?.text?.trim() || '';
+
+        if (texto.length > 3) {
+          textoTotal.push(texto);
+          procesadas++;
+          logOcr(`✓ Img ${i + 1} — ${texto.slice(0, 50)}…`);
+        } else {
+          logOcr(`— Img ${i + 1} sin texto`);
+        }
+      } catch(e) {
+        logOcr(`❌ Img ${i + 1}: ${e.message}`);
+      }
+    }
+
+    await worker.terminate();
+
+    const textoFinal = textoTotal.join('\n\n');
+
+    // 4. Guardar resultado en content.js
+    if (textoFinal) {
+      await enviarMensaje(tab.id, { action: 'save_ocr_result', texto: textoFinal });
+    }
+
+    logOcr(`✅ OCR completado — ${procesadas}/${limite} imágenes con texto`);
+
+    if (procesadas > 0) {
       badge.textContent = 'DONE'; badge.className = 'section-badge badge-done';
       if (num) { num.textContent = '✓'; num.className = 'step-num ok'; }
-      result.textContent = res.details || 'OCR completado';
+      result.textContent = `✅ ${procesadas} imágenes leídas`;
       result.className   = 'step-res ok';
+
+      // Actualizar campo descripción en tab Producto
+      const datosActualizados = await enviarMensaje(tab.id, { action: 'get_all_data' });
+      if (datosActualizados?.descripcion) setField('pvDesc', datosActualizados.descripcion);
     } else {
-      badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
-      if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
-      result.textContent = res.details || 'Error en OCR';
-      result.className   = 'step-res err';
+      badge.textContent = 'WARN'; badge.className = 'section-badge badge-warn';
+      if (num) { num.textContent = '!'; num.className = 'step-num'; }
+      result.textContent = 'Sin texto detectado en las imágenes';
+      result.className   = 'step-res';
     }
+
     btn.textContent = 'Iniciar';
     btn.disabled    = false;
     btn.classList.remove('running');
