@@ -67,7 +67,6 @@ module.exports = (env, argv) => {
           { from: 'content.js', to: 'content.js' },
           { from: 'sidepanel.html', to: 'sidepanel.html' },
           { from: 'tesseract.min.js', to: 'tesseract.min.js' },
-          { from: path.resolve(__dirname, 'xlsx.min.js'), to: 'xlsx.min.js' },
           { from: 'lib/', to: 'lib/' },
           { from: 'icons/', to: 'icons/', noErrorOnMissing: true }
         ]
