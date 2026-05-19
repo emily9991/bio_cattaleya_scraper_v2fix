@@ -686,31 +686,138 @@ function extraerConSchema(campos) {
 }
 
 // ============================================================
-// OCR — lee imágenes de 图文详情 y extrae texto en chino
+// OCR — Tesseract chi_sim+eng en content script
 // ============================================================
-function iniciarOCR() {
-  /**
-   * El OCR real lo maneja background.js con Tesseract.
-   * Aquí enviamos las URLs de imagenes_descripcion para que
-   * background.js las procese y devuelva el texto en chino.
-   * El resultado se guarda en datosExtraidos.descripcion_ocr
-   * y se concatena a descripcion.
-   */
-  var imagenesDesc = datosExtraidos.imagenes_descripcion || [];
+var tesseractWorker = null;
+var tesseractListo  = false;
 
+async function inicializarTesseract() {
+  if (tesseractListo && tesseractWorker) return tesseractWorker;
+  var langPath = chrome.runtime.getURL('lib/');
+  tesseractWorker = await Tesseract.createWorker('chi_sim+eng', 1, {
+    workerPath: chrome.runtime.getURL('lib/worker.min.js'),
+    langPath:   langPath,
+    corePath:   chrome.runtime.getURL('lib/tesseract-core-simd-lstm.wasm.js'),
+    logger: function(m) {
+      if (m.status === 'recognizing text') {
+        chrome.runtime.sendMessage({
+          action: 'ocr_progress',
+          msg: 'Leyendo… ' + Math.round((m.progress || 0) * 100) + '%'
+        }).catch(function() {});
+      }
+    }
+  });
+  tesseractListo = true;
+  bscLog('tesseract', 'worker chi_sim+eng listo', {});
+  return tesseractWorker;
+}
+
+async function reconocerTexto(imageData) {
+  var worker = await inicializarTesseract();
+  var result = await worker.recognize(imageData);
+  return (result && result.data && result.data.text) ? result.data.text.trim() : '';
+}
+
+function iniciarOCR() {
+  var imagenesDesc = datosExtraidos.imagenes_descripcion || [];
   if (imagenesDesc.length === 0) {
-    // Intentar extraer ahora si no se hizo antes
     imagenesDesc = extraerImagenesDescripcion();
     datosExtraidos.imagenes_descripcion = imagenesDesc;
   }
+  bscLog('iniciarOCR', 'lanzando OCR async', { total: imagenesDesc.length });
 
-  bscLog('iniciarOCR', 'imagenes_descripcion para OCR', { total: imagenesDesc.length });
+  // Procesar en background async — notificar progreso via messages
+  procesarOCRAsync(imagenesDesc);
 
   return {
-    status:  "ok",
-    details: "OCR iniciado - puede tardar hasta 6 minutos",
+    status:  'ok',
+    details: 'OCR iniciado - puede tardar hasta 6 minutos',
     data:    { imagenes_descripcion: imagenesDesc, total: imagenesDesc.length }
   };
+}
+
+async function procesarOCRAsync(imagenes) {
+  if (!imagenes || imagenes.length === 0) return;
+  var limite      = Math.min(imagenes.length, 15);
+  var textoTotal  = [];
+  var procesadas  = 0;
+
+  chrome.runtime.sendMessage({
+    action: 'ocr_progress',
+    msg: 'Iniciando OCR — ' + limite + ' imágenes de descripción'
+  }).catch(function() {});
+
+  try {
+    await inicializarTesseract();
+  } catch(e) {
+    chrome.runtime.sendMessage({
+      action: 'ocr_progress',
+      msg: '❌ Error iniciando Tesseract: ' + e.message
+    }).catch(function() {});
+    return;
+  }
+
+  for (var i = 0; i < limite; i++) {
+    var url = imagenes[i];
+    chrome.runtime.sendMessage({
+      action: 'ocr_progress',
+      msg: 'Imagen ' + (i + 1) + '/' + limite + '…'
+    }).catch(function() {});
+
+    try {
+      // Obtener base64 via background
+      var b64 = await new Promise(function(resolve) {
+        chrome.runtime.sendMessage({ action: 'fetch_image_b64', url: url }, function(res) {
+          resolve(res && res.b64 ? res.b64 : null);
+        });
+      });
+
+      if (!b64) {
+        chrome.runtime.sendMessage({
+          action: 'ocr_progress',
+          msg: '⚠️ Img ' + (i + 1) + ' no disponible'
+        }).catch(function() {});
+        continue;
+      }
+
+      var texto = await reconocerTexto(b64);
+
+      if (texto && texto.length > 3) {
+        textoTotal.push(texto);
+        procesadas++;
+        chrome.runtime.sendMessage({
+          action: 'ocr_progress',
+          msg: '✓ Img ' + (i + 1) + ' — ' + texto.slice(0, 40) + '…'
+        }).catch(function() {});
+      } else {
+        chrome.runtime.sendMessage({
+          action: 'ocr_progress',
+          msg: '— Img ' + (i + 1) + ' sin texto'
+        }).catch(function() {});
+      }
+    } catch(e) {
+      chrome.runtime.sendMessage({
+        action: 'ocr_progress',
+        msg: '❌ Img ' + (i + 1) + ': ' + e.message
+      }).catch(function() {});
+    }
+  }
+
+  var textoFinal = textoTotal.join('\n\n');
+
+  // Guardar en datosExtraidos
+  datosExtraidos.descripcion_ocr = textoFinal;
+  var descParams = (datosExtraidos.descripcion || '').split('\n────────────────────')[0];
+  if (textoFinal) {
+    datosExtraidos.descripcion = descParams + '\n────────────────────\n' + textoFinal;
+  }
+
+  chrome.runtime.sendMessage({
+    action: 'ocr_progress',
+    msg: '✅ OCR listo — ' + procesadas + '/' + limite + ' imágenes con texto'
+  }).catch(function() {});
+
+  bscLog('procesarOCRAsync', 'completado', { procesadas: procesadas, chars: textoFinal.length });
 }
 
 // ============================================================
@@ -747,7 +854,24 @@ chrome.runtime.onMessage.addListener(function(message, sender, reply) {
     if (act === 'get_basic_data')    { reply(extraerDatosBasicos()); return true; }
     if (act === 'get_media')         { reply(extraerMedia()); return true; }
     if (act === 'detect_pagination') { reply(detectarPaginacion()); return true; }
-    if (act === 'do_ocr')            { reply(iniciarOCR()); return true; }
+    if (act === 'do_ocr') { reply(iniciarOCR()); return true; }
+
+    if (act === 'run_tesseract') {
+      reconocerTexto(message.imageData)
+        .then(function(texto) { reply({ status: 'ok', texto: texto }); })
+        .catch(function(e)    { reply({ status: 'error', texto: '', details: e.message }); });
+      return true;
+    }
+
+    if (act === 'save_ocr_result') {
+      datosExtraidos.descripcion_ocr = message.texto || '';
+      var descBase = (datosExtraidos.descripcion || '').split('\n────────────────────')[0];
+      if (message.texto) {
+        datosExtraidos.descripcion = descBase + '\n────────────────────\n' + message.texto;
+      }
+      reply({ status: 'ok' });
+      return true;
+    }
 
     // Selector visual
     if (act === 'activar_selector') {
