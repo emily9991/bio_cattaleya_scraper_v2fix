@@ -153,6 +153,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'download_image') {
+    console.log('📥 filename:', message.filename);
     chrome.downloads.download({
       url:      message.url,
       filename: message.filename,
