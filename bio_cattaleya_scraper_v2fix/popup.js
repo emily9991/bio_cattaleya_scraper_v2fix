@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 //============================================================
 // BIO CATTALEYA SCRAPER PRO v4.1 — POPUP CONTROLLER
 // Cambios v4.1:
@@ -18,6 +19,7 @@ let camposDefinidos = {};
 let esperandoSelector = false;
 let campoEnEspera = null;
 let ultimoListado = [];
+
 
 async function getActiveTab() {
   const [t] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -748,7 +750,7 @@ async function descargarSeleccionadas() {
   const items = [...grid.querySelectorAll('.galeria-item.selected')];
   if (!items.length) { mostrarExportStatus('⚠️ Selecciona al menos una imagen', ''); return; }
 
-  const inputEl  = document.getElementById('inputNombreCarpeta');
+  const inputEl   = document.getElementById('inputNombreCarpeta');
   const nombreRaw = (inputEl?.value || '').trim();
   if (!nombreRaw) {
     if (inputEl) {
@@ -761,7 +763,6 @@ async function descargarSeleccionadas() {
   }
 
   const slug = nombreRaw.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '').slice(0, 60);
-
   const tabs = await chrome.tabs.query({});
   const tab  = tabs.find(t => {
     try {
@@ -769,33 +770,50 @@ async function descargarSeleccionadas() {
       return /(?:^|\.)(?:taobao|tmall|1688)\.com$/.test(h);
     } catch { return false; }
   });
-  const sku = tab?.url?.match(/[?&]id=(\d+)/)?.[1]
+  const sku     = tab?.url?.match(/[?&]id=(\d+)/)?.[1]
     || tab?.url?.match(/\/(\d{8,})/)?.[1]
     || String(Date.now());
+  const carpeta = `${slug}_${sku}`;
 
-  const carpeta = `BioCattaleya/seleccion/${slug}_${sku}`;
-  mostrarExportStatus(`⏳ Descargando ${items.length} archivo(s)…`, '');
+  mostrarExportStatus(`⏳ Preparando ${items.length} archivo(s)…`, '');
+
+  const zip = new JSZip();
+  const folder = zip.folder(carpeta);
   let ok = 0, fail = 0;
 
   for (let i = 0; i < items.length; i++) {
     const el  = items[i];
     const url = el.dataset.url;
-    if (!url) continue;
+    if (!url) { fail++; continue; }
+
     const ext    = url.split('.').pop().split('?')[0].replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
     const nombre = el.dataset.tipo === 'video'
       ? `video_1.${ext}`
       : `imagen_${String(i + 1).padStart(2, '0')}.${ext}`;
+
     try {
-      const res = await new Promise(resolve =>
-        chrome.runtime.sendMessage({ action: 'download_image', url, filename: `${carpeta}/${nombre}` }, resolve)
-      );
-      if (res?.ok) ok++; else fail++;
-    } catch { fail++; }
-    await new Promise(r => setTimeout(r, 120));
+      const res  = await fetch(url);
+      const blob = await res.blob();
+      folder.file(nombre, blob);
+      ok++;
+    } catch {
+      fail++;
+    }
+
+    mostrarExportStatus(`⏳ ${i + 1}/${items.length} descargando…`, '');
   }
 
+  mostrarExportStatus(`⏳ Generando ZIP…`, '');
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const zipUrl  = URL.createObjectURL(zipBlob);
+  const a       = document.createElement('a');
+  a.href        = zipUrl;
+  a.download    = `${carpeta}.zip`;
+  a.click();
+  URL.revokeObjectURL(zipUrl);
+
   mostrarExportStatus(
-    fail === 0 ? `✅ ${ok} archivo(s) → ${carpeta}/` : `⚠️ ${ok} ok · ${fail} fallaron`,
+    fail === 0 ? `✅ ${ok} archivo(s) → ${carpeta}.zip` : `⚠️ ${ok} ok · ${fail} fallaron`,
     fail === 0 ? 'success' : ''
   );
 }

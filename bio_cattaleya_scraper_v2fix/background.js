@@ -160,8 +160,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       saveAs:   false
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
+        console.log('❌ ERROR:', chrome.runtime.lastError.message);
         sendResponse({ ok: false, error: chrome.runtime.lastError.message });
       } else {
+        console.log('✅ downloadId:', downloadId);
         sendResponse({ ok: true, downloadId });
       }
     });
