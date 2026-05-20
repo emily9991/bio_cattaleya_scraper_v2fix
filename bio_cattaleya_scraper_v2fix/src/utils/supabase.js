@@ -75,24 +75,27 @@ async function enviarProductoASupabase(producto) {
   try {
 
     // ── 1. products ──────────────────────────────────────────
-    const r1 = await fetch(`${url}/rest/v1/products`, {
+    const r1 = await fetch(`${url}/rest/v1/products?on_conflict=sku`, {
       method: 'POST',
-      headers,
+      headers: { ...headers, 'Prefer': 'resolution=merge-duplicates,return=representation' },
       body: JSON.stringify({
-        sku:         sanitizeInput(producto.sku),
-        name:        sanitizeInput(producto.name),
-        description: sanitizeInput(producto.description || ''),
-        status:      'active',
-        images:      (producto.images || []).slice(0, 10)
+        sku:              sanitizeInput(producto.sku),
+        name:             sanitizeInput(producto.name),
+        description:      sanitizeInput(producto.description || ''),
+        status:           'active',
+        images:           (producto.images || []).slice(0, 10),
+        precio_original:  sanitizeInput(producto.precio_original  || ''),
+        precio_descuento: sanitizeInput(producto.precio_descuento || ''),
+        precio_cny:       sanitizeInput(producto.precio_cny       || ''),
+        variaciones:      producto.variants || []
       })
     });
-
     if (!r1.ok) {
       return { ok: false, step: 'products', error: await r1.text() };
     }
-
     const [productoCreado] = await r1.json();
     const productId = productoCreado.id;
+
 
     // ── 2. pricing ───────────────────────────────────────────
     const r2 = await fetch(`${url}/rest/v1/pricing`, {
@@ -116,11 +119,11 @@ async function enviarProductoASupabase(producto) {
       headers,
       body: JSON.stringify({
         product_id:    productId,
+        supplier_id:   '6e524d67-75a8-4411-97c8-721528aee452',
         supplier_code: sanitizeInput(producto.supplierCode || 'SUP-0001'),
         source_url:    sanitizeInput(producto.sourceUrl   || '')
       })
     });
-
     if (!r3.ok) {
       return { ok: false, step: 'product_suppliers', error: await r3.text() };
     }

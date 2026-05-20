@@ -1219,16 +1219,19 @@ document.getElementById('btnInsertSupabase')?.addEventListener('click', async ()
     : `BCS-CN-${Date.now().toString().slice(-4)}`;
 
   const producto = {
-    sku:          datos.sku         || skuDesdeUrl,
-    name:         datos.nombre      || '',
-    description:  datos.descripcion || '',
-    images:       datos.imagenes    || [],
-    priceUSD:     parseFloat(document.getElementById('sbCostUSD')?.value)  || 0,
-    priceCOP:     parseFloat(document.getElementById('sbPriceCOP')?.value) || 0,
-    exchangeRate: 4200,
-    supplierCode: document.getElementById('sbSupplierCode')?.value.trim() || 'SUP-0001',
-    sourceUrl:    datos.url         || '',
-    variants:     datos.variantes   || [],
+    sku:              datos.sku              || skuDesdeUrl,
+    name:             datos.nombre           || datos.titulo || '',
+    description:      datos.descripcion      || '',
+    images:           datos.imagenes         || [],
+    priceUSD:         parseFloat(document.getElementById('sbCostUSD')?.value)  || 0,
+    priceCOP:         parseFloat(document.getElementById('sbPriceCOP')?.value) || 0,
+    exchangeRate:     4200,
+    supplierCode:     document.getElementById('sbSupplierCode')?.value.trim() || 'SUP-0001',
+    sourceUrl:        datos.url              || '',
+    variants:         datos.variaciones      || datos.variantes || [],
+    precio_original:  datos.precio_original  || '',
+    precio_descuento: datos.precio_descuento || '',
+    precio_cny:       datos.precio_cny       || datos.precio   || '',
   };
 
   // Actualizar JSON preview
@@ -1286,7 +1289,7 @@ async function syncSbPreview() {
 
   // Habilitar botón insertar solo si hay datos
   const btn = document.getElementById('btnInsertSupabase');
-  if (btn) btn.disabled = !(datos.nombre && datos.nombre.length > 0);
+  if (btn) btn.disabled = !(( datos.nombre || datos.titulo) && (datos.nombre || datos.titulo).length > 0);
 }
 
 function setSbStatus(type, text) {
