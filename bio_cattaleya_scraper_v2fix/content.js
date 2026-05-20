@@ -382,17 +382,39 @@ function extraerDatosBasicos() {
     // (OCR de 图文详情 se agrega después en do_ocr)
     var descripcionBase = params.texto;
 
+    // ── PRECIO ORIGINAL Y DESCUENTO ──────────────────────────
+    var precioDescEl = document.querySelector('[class*="highlightPrice"] [class*="text"]');
+    var precioDesc   = precioDescEl ? precioDescEl.textContent.trim() : "";
+
+    var precioOrigTexts = [...document.querySelectorAll('[class*="subPrice"] [class*="text"]')]
+      .map(el => el.textContent.trim())
+      .filter(t => t !== '￥' && t !== '' && /[\d.]/.test(t));
+    var precioOrig = precioOrigTexts[0] || "";
+
+    // ── VARIACIONES ──────────────────────────────────────────
+    var variaciones = [...document.querySelectorAll('[class*="valueItemBig"]')].map(function(v) {
+      var texto = v.querySelector('[class*="valueItemText"]')?.textContent.trim() || "";
+      var img   = v.querySelector('img')?.src || "";
+      var vid   = v.dataset.vid || "";
+      return { vid: vid, texto: texto, img: img };
+    });
+
     var resultado = {
-      titulo:       titulo,
-      precio:       precio,
-      tienda:       tienda,
-      ventas:       ventas,
-      rating:       rating,
-      specs:        params.texto, // compatibilidad legacy
-      parametros:   params.parametros,
-      sku:          sku,
-      descripcion:  descripcionBase,
-      url:          window.location.href
+      titulo:           titulo,
+      precio:           precio,
+      tienda:           tienda,
+      ventas:           ventas,
+      rating:           rating,
+      specs:            params.texto,
+      parametros:       params.parametros,
+      sku:              sku,
+      descripcion:      descripcionBase,
+      url:              window.location.href,
+      // ── NUEVOS ──
+      precio_descuento: precioDesc,
+      precio_original:  precioOrig,
+      precio_cny:       precioOrig || precioDesc,
+      variaciones:      variaciones
     };
 
     datosExtraidos = Object.assign({}, datosExtraidos, resultado);
