@@ -259,21 +259,30 @@ function extraerParametrosEstructurados() {
 // EXTRACCION IMAGENES DESCRIPCION 图文详情
 // ============================================================
 function extraerImagenesDescripcion() {
-  /**
-   * Captura las imágenes de la sección 图文详情 (descripción gráfica).
-   * Selector principal: .descV8-singleImage-image con data-name="singleImage"
-   * Estas son las imágenes con texto chino sobre ingredientes, especificaciones, etc.
-   */
   var imgs = new Set();
 
-  // Selector principal — confirmado por inspección
+  // Encontrar límite visual — 本店推荐
+  var limiteTop = Infinity;
+  document.querySelectorAll('[class*="tabDetailItemTitle--"]').forEach(function(el) {
+    var texto = el.textContent.trim();
+    if (texto.indexOf('推荐') !== -1 || texto.indexOf('Recommends') !== -1 || texto.indexOf('recommends') !== -1) {
+      var top = el.getBoundingClientRect().top;
+      if (top > 0 && top < limiteTop) limiteTop = top;
+    }
+  });
+
   document.querySelectorAll('img.descV8-singleImage-image[data-name="singleImage"]').forEach(function(img) {
+    // Si hay límite, solo incluir imágenes visualmente antes de él
+    if (limiteTop !== Infinity) {
+      var imgTop = img.getBoundingClientRect().top;
+      if (imgTop >= limiteTop) return;
+    }
     var src = img.getAttribute('data-src') || img.getAttribute('src') || '';
     src = limpiarUrlImagen(src);
     if (src && esUrlImagenPermitida(src)) imgs.add(src);
   });
 
-  // Fallback: cualquier imagen dentro del contenedor de descripción
+  // Fallback sin cambios
   if (imgs.size === 0) {
     var descContainers = document.querySelectorAll(
       '[class*="descV8--"],[class*="descContainer--"],[class*="description--"],' +
@@ -292,7 +301,6 @@ function extraerImagenesDescripcion() {
   bscLog('extraerImagenesDescripcion', 'resultado', { total: resultado.length });
   return resultado;
 }
-
 // ============================================================
 // EXTRACCION DATOS BASICOS
 // ============================================================

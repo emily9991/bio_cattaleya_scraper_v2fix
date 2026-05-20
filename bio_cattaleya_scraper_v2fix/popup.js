@@ -133,45 +133,64 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // 1. Obtener imágenes de descripción desde content.js
-    const datos = await enviarMensaje(tab.id, { action: 'get_all_data' });
-    const imagenesDesc = datos?.imagenes_descripcion || [];
+    
+    // 1. Obtener imágenes de descripción — auto-capturar si no hay
+logOcr('Buscando imágenes de descripción…');
+let datos = await enviarMensaje(tab.id, { action: 'get_all_data' });
+let imagenesDesc = datos?.imagenes_descripcion || [];
 
-    if (!imagenesDesc.length) {
-      badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
-      if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
-      result.textContent = 'Ejecuta primero el Paso 3 (Imágenes)';
-      result.className   = 'step-res err';
-      btn.textContent = 'Iniciar'; btn.disabled = false; btn.classList.remove('running');
-      return;
-    }
+if (!imagenesDesc.length) {
+  logOcr('Capturando imágenes (Paso 3 automático)…');
+  await enviarMensaje(tab.id, { action: 'get_media' });
+  datos = await enviarMensaje(tab.id, { action: 'get_all_data' });
+  imagenesDesc = datos?.imagenes_descripcion || [];
+}
+
+if (!imagenesDesc.length) {
+  badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
+  if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
+  result.textContent = 'No se encontraron imágenes de descripción en esta página';
+  result.className   = 'step-res err';
+  btn.textContent = 'Iniciar'; btn.disabled = false; btn.classList.remove('running');
+  return;
+}
 
     logOcr(`Iniciando OCR — ${imagenesDesc.length} imágenes de descripción`);
 
-    // 2. Inicializar Tesseract en el sidepanel
+    // 2. Inicializar Tesseract
     let worker = null;
     try {
-      logOcr('Cargando modelo chi_sim+eng…');
-      const langPath = chrome.runtime.getURL('lib/');
-      worker = await Tesseract.createWorker('chi_sim+eng', 1, {
-        workerPath: chrome.runtime.getURL('lib/worker.min.js'),
-        langPath:   langPath,
-        corePath:   chrome.runtime.getURL('lib/tesseract-core-simd-lstm.wasm.js'),
+      logOcr('Cargando chi_sim…');
+      const chiSimBuf = await fetch(chrome.runtime.getURL('lib/chi_sim.traineddata')).then(r => r.arrayBuffer());
+      logOcr('Cargando eng…');
+      const engBuf = await fetch(chrome.runtime.getURL('lib/eng.traineddata')).then(r => r.arrayBuffer());
+
+      logOcr('Iniciando worker…');
+      worker = await Tesseract.createWorker({
+        workerPath:    chrome.runtime.getURL('lib/worker.min.js'),
+        corePath:      chrome.runtime.getURL('lib/tesseract-core-simd-lstm.wasm.js'),
+        workerBlobURL: false,
+        langPath:      chrome.runtime.getURL('lib/'),
         logger: m => {
           if (m.status === 'recognizing text') {
             logOcr('Leyendo… ' + Math.round((m.progress || 0) * 100) + '%');
           }
         }
       });
+
+      await worker.FS('writeFile', ['chi_sim.traineddata', new Uint8Array(chiSimBuf)]);
+      await worker.FS('writeFile', ['eng.traineddata', new Uint8Array(engBuf)]);
+      await worker.initialize('chi_sim+eng');
       logOcr('✓ Modelo cargado');
     } catch(e) {
       badge.textContent = 'ERROR'; badge.className = 'section-badge badge-error';
       if (num) { num.textContent = '✗'; num.className = 'step-num error'; }
-      result.textContent = 'Error cargando Tesseract: ' + e.message;
+      result.textContent = 'Error: ' + (e?.message || e?.toString() || 'desconocido');
       result.className   = 'step-res err';
       btn.textContent = 'Iniciar'; btn.disabled = false; btn.classList.remove('running');
       return;
     }
+
 
     // 3. Procesar cada imagen
     const limite     = Math.min(imagenesDesc.length, 15);
@@ -192,7 +211,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!b64) { logOcr(`⚠️ Img ${i + 1} no disponible`); continue; }
 
-        const res = await worker.recognize(b64);
+        console.log('b64 tipo:', typeof b64, '| inicio:', b64?.slice(0, 80));
+        const dataUrl = b64.startsWith('data:') ? b64 : `data:image/jpeg;base64,${b64}`;
+        console.log('dataUrl inicio:', dataUrl.slice(0, 80));
+        const res = await worker.recognize(dataUrl);
         const texto = res?.data?.text?.trim() || '';
 
         if (texto.length > 3) {
@@ -226,7 +248,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Actualizar campo descripción en tab Producto
       const datosActualizados = await enviarMensaje(tab.id, { action: 'get_all_data' });
-      if (datosActualizados?.descripcion) setField('pvDesc', datosActualizados.descripcion);
+      const descFinal = (datosActualizados?.descripcion || '') +
+        (textoFinal ? '\n────────────────────\n' + textoFinal : '');
+      if (descFinal) setField('pvDesc', descFinal);
     } else {
       badge.textContent = 'WARN'; badge.className = 'section-badge badge-warn';
       if (num) { num.textContent = '!'; num.className = 'step-num'; }

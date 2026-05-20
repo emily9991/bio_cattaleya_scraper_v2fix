@@ -152,6 +152,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'download_image') {
+    chrome.downloads.download({
+      url:      message.url,
+      filename: message.filename,
+      saveAs:   false
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ ok: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ ok: true, downloadId });
+      }
+    });
+    return true;
+  }
+
   if (message.action === 'validate_license_now') {
     validateLicense()
       .then(() => sendResponse({ success: true }))
