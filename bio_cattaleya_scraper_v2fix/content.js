@@ -351,7 +351,6 @@ function extraerDatosBasicos() {
       precio     = precioDesc || precioOrig;
     }
    
-    var precio = precioEl ? precioEl.innerText.replace(/\s+/g, ' ').trim() : "";
 
     // Tienda
     var tiendaEl = document.querySelector(
