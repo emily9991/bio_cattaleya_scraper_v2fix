@@ -288,6 +288,16 @@ if (!imagenesDesc.length) {
     await ejecutarAccion('detect_pagination', 'badge4', 'result4', tab.id, 'stepNum4');
   });
 
+  document.getElementById('btnPanelDerecho')?.addEventListener('click', async () => {
+    const tab = await getActiveTab(); if (!tab?.id) return;
+    const res = await ejecutarAccion('get_panel_derecho', 'badgePD', 'resultPD', tab.id, 'stepNumPD');
+    if (res?.data) {
+      setField('pvPrecioDesc',  res.data.precio_descuento ? `¥ ${res.data.precio_descuento}` : '—');
+      setField('pvPrecioOrig',  res.data.precio_original  ? `¥ ${res.data.precio_original}`  : '—');
+      setField('pvVariaciones', res.data.variaciones?.length ? `${res.data.variaciones.length} variaciones` : '—');
+    }
+  });
+
   // ── RESET ────────────────────────────────────────────────
   document.getElementById('btnResetData').addEventListener('click', async () => {
     const tab = await getActiveTab(); if (!tab?.id) return;

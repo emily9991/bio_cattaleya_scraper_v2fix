@@ -426,6 +426,50 @@ function extraerDatosBasicos() {
 }
 
 // ============================================================
+// EXTRACCION PANEL DERECHO — precio + variaciones
+// ============================================================
+function extraerPanelDerecho() {
+  try {
+    var precioDesc = "";
+    var precioOrig = "";
+    var priceWrap  = document.querySelector('[class*="priceWrap"]');
+    if (priceWrap) {
+      var numeros = [...priceWrap.querySelectorAll('span, div')]
+        .map(function(el) { return el.textContent.trim(); })
+        .filter(function(t) { return /^\d+\.?\d*$/.test(t); });
+      precioDesc = numeros[0] || "";
+      precioOrig = numeros[1] || numeros[0] || "";
+    }
+
+    var variaciones = [...document.querySelectorAll('[class*="valueItemBig"]')].map(function(v) {
+      return {
+        vid:   v.dataset.vid || "",
+        texto: v.querySelector('[class*="valueItemText"]')?.textContent.trim() || "",
+        img:   v.querySelector('img')?.src || ""
+      };
+    });
+
+    datosExtraidos.precio_descuento = precioDesc;
+    datosExtraidos.precio_original  = precioOrig;
+    datosExtraidos.precio_cny       = precioOrig || precioDesc;
+    datosExtraidos.variaciones      = variaciones;
+
+    return {
+      status:  "ok",
+      details: `precio ¥${precioDesc} (orig ¥${precioOrig}) · ${variaciones.length} variaciones`,
+      data: {
+        precio_descuento: precioDesc,
+        precio_original:  precioOrig,
+        precio_cny:       precioOrig || precioDesc,
+        variaciones:      variaciones
+      }
+    };
+  } catch(e) {
+    return { status: "error", details: "Error panel derecho: " + e.message };
+  }
+}
+
+// ============================================================
 // EXTRACCION MEDIA (IMAGENES PRODUCTO + DESCRIPCION)
 // ============================================================
 function encontrarPanelProducto() {
@@ -879,7 +923,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, reply) {
     }
     if (act === 'get_basic_data')    { reply(extraerDatosBasicos()); return true; }
     if (act === 'get_media')         { reply(extraerMedia()); return true; }
-    if (act === 'detect_pagination') { reply(detectarPaginacion()); return true; }
+    if (act === 'get_panel_derecho') { reply(extraerPanelDerecho()); return true; }
     if (act === 'do_ocr') { reply(iniciarOCR()); return true; }
 
     if (act === 'run_tesseract') {
