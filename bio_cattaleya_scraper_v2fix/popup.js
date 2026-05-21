@@ -294,7 +294,20 @@ if (!imagenesDesc.length) {
     if (res?.data) {
       setField('pvPrecioDesc',  res.data.precio_descuento ? `¥ ${res.data.precio_descuento}` : '—');
       setField('pvPrecioOrig',  res.data.precio_original  ? `¥ ${res.data.precio_original}`  : '—');
-      setField('pvVariaciones', res.data.variaciones?.length ? `${res.data.variaciones.length} variaciones` : '—');
+
+      // ── Llenar chips de variaciones ──
+      const variaciones = res.data.variaciones || [];
+      const wrapTallas  = document.getElementById('chipsWrapTallas');
+      const wrapColores = document.getElementById('chipsWrapColores');
+      const wrapKits    = document.getElementById('chipsWrapKits');
+
+      if (variaciones.length && wrapTallas) {
+        wrapTallas.innerHTML = variaciones.map(v =>
+          `<span class="chip">${v.texto || v.vid}</span>`
+        ).join('');
+        if (wrapColores) wrapColores.innerHTML = '<span class="chip chip-empty">Ver tallas</span>';
+        if (wrapKits)    wrapKits.innerHTML    = '<span class="chip chip-empty">Ver tallas</span>';
+      }
     }
   });
 
