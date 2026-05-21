@@ -265,7 +265,7 @@ function extraerImagenesDescripcion() {
   var limiteTop = Infinity;
   document.querySelectorAll('[class*="tabDetailItemTitle--"]').forEach(function(el) {
     var texto = el.textContent.trim();
-    if (texto.indexOf('推荐') !== -1 || texto.indexOf('Recommends') !== -1 || texto.indexOf('recommends') !== -1) {
+    if (texto.indexOf('推荐') !== -1 || texto.indexOf('recommends') !== -1 || texto.indexOf('Recommends') !== -1 || texto.indexOf('Our store') !== -1 || texto.indexOf('store recommends') !== -1) {
       var top = el.getBoundingClientRect().top;
       if (top > 0 && top < limiteTop) limiteTop = top;
     }
@@ -338,22 +338,19 @@ function extraerDatosBasicos() {
     var titulo = tituloEl ? tituloEl.innerText.trim() : document.title;
 
     // Precio
-    var precioEl = zona.querySelector(
-      ".trade-price-integer,[class*='trade-price-integer']," +
-      "[class*='priceText--'],[class*='PriceText--']," +
-      "[class*='itemPrice--'],[class*='ItemPrice--']," +
-      "#J_PromoPriceNum,.tb-rmb-num,.J_price"
-    );
-    if (!precioEl) {
-      var symbolEl = zona.querySelector(".trade-price-symbol,[class*='trade-price-symbol']");
-      if (symbolEl && symbolEl.nextElementSibling) precioEl = symbolEl.nextElementSibling;
+    var precio = "";
+    var precioDesc = "";
+    var precioOrig = "";
+    var priceWrap = document.querySelector('[class*="priceWrap"]');
+    if (priceWrap) {
+      var numeros = [...priceWrap.querySelectorAll('span, div')]
+        .map(function(el) { return el.textContent.trim(); })
+        .filter(function(t) { return /^\d+\.?\d*$/.test(t); });
+      precioDesc = numeros[0] || "";
+      precioOrig = numeros[1] || numeros[0] || "";
+      precio     = precioDesc || precioOrig;
     }
-    if (!precioEl) {
-      precioEl = document.querySelector(
-        ".trade-price-integer,[class*='trade-price-integer']," +
-        ".trade-price-container [class*='price']"
-      );
-    }
+   
     var precio = precioEl ? precioEl.innerText.replace(/\s+/g, ' ').trim() : "";
 
     // Tienda
