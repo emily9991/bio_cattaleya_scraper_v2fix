@@ -1244,6 +1244,7 @@ document.getElementById('btnInsertSupabase')?.addEventListener('click', async ()
   const producto = {
     sku:              datos.sku              || skuDesdeUrl,
     name:             datos.nombre           || datos.titulo || '',
+    name_en:          document.getElementById('pvNombreEN')?.value.trim() || '',
     description:      datos.descripcion      || '',
     images:           datos.imagenes         || [],
     priceUSD:         parseFloat(document.getElementById('sbCostUSD')?.value)  || 0,

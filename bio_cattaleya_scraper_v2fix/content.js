@@ -459,6 +459,8 @@ function extraerPanelDerecho() {
     datosExtraidos.precio_original  = precioOrig;
     datosExtraidos.precio_cny       = precioOrig || precioDesc;
     datosExtraidos.variaciones      = variaciones;
+    datosExtraidos.precio_original  = precioOrig;
+    datosExtraidos.precio_descuento = precioDesc;
 
     return {
       status:  "ok",
@@ -1002,6 +1004,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, reply) {
         descripcion_ocr:      descOcr,
         datos_custom:         datosExtraidos.custom        || {},
         variantes:            datosExtraidos.variantes     || [],
+        variaciones:          datosExtraidos.variaciones   || [],
+        precio_original:      datosExtraidos.precio_original  || '',
+        precio_descuento:     datosExtraidos.precio_descuento || '',
+        precio_cny:           datosExtraidos.precio_cny       || '',
         imagenesPorColor:     datosExtraidos.imagenesPorColor || {},
         imagenes_variantes:   datosExtraidos.imagenes_variantes || [],
         imagenes_galeria_notion: datosExtraidos.imagenes_galeria_notion || '',

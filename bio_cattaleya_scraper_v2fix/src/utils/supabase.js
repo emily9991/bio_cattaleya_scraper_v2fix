@@ -141,7 +141,7 @@ async function enviarProductoASupabase(producto) {
         method: 'POST',
         headers: {
           ...headers,
-          'Prefer': 'resolution=merge-duplicates'  // sin return=representation para bulk
+          'Prefer': 'resolution=ignore-duplicates'  // sin return=representation para bulk
         },
         body: JSON.stringify(rows)
       });
