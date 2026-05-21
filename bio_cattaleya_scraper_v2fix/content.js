@@ -441,7 +441,13 @@ function extraerPanelDerecho() {
       precioOrig = numeros[1] || numeros[0] || "";
     }
 
-    var variaciones = [...document.querySelectorAll('[class*="valueItemBig"]')].map(function(v) {
+    var varItems = document.querySelectorAll('[class*="valueItemBig"]').length > 0
+      ? [...document.querySelectorAll('[class*="valueItemBig"]')]
+      : [...document.querySelectorAll('[class*="valueItem--"]')].filter(function(v) {
+          return v.dataset.vid && v.querySelector('[class*="valueItemText"]')?.textContent.trim();
+        });
+
+    var variaciones = varItems.map(function(v) {
       return {
         vid:   v.dataset.vid || "",
         texto: v.querySelector('[class*="valueItemText"]')?.textContent.trim() || "",
