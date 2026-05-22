@@ -283,10 +283,6 @@ if (!imagenesDesc.length) {
       mostrarGaleriaMedia(res.data.imagenes || [], res.data.video || null);
     }
   });
-  document.getElementById('btnPagination').addEventListener('click', async () => {
-    const tab = await getActiveTab(); if (!tab?.id) return;
-    await ejecutarAccion('detect_pagination', 'badge4', 'result4', tab.id, 'stepNum4');
-  });
 
   document.getElementById('btnPanelDerecho')?.addEventListener('click', async () => {
     const tab = await getActiveTab(); if (!tab?.id) return;
@@ -1111,10 +1107,10 @@ async function accionCompleta(tabId) {
   if (btn) btn.disabled = true;
   setStatus('Iniciando...');
   const pasos = [
-    { msg: '⏳ 1/4 · Scroll (20s)…',   action: 'do_scroll' },
-    { msg: '⏳ 2/4 · Extrayendo…',      action: 'get_basic_data' },
-    { msg: '⏳ 3/4 · Capturando media…', action: 'get_media' },
-    { msg: '⏳ 4/4 · Detectando…',      action: 'detect_pagination' },
+    { msg: '⏳ 1/3 · Scroll (20s)…',   action: 'do_scroll' },
+    { msg: '⏳ 2/3 · Extrayendo…',      action: 'get_basic_data' },
+    { msg: '⏳ 3/3 · Capturando media…', action: 'get_media' },
+  
   ];
   for (const p of pasos) {
     if (btn) btn.textContent = p.msg;

@@ -81,6 +81,7 @@ async function enviarProductoASupabase(producto) {
       body: JSON.stringify({
         sku:              sanitizeInput(producto.sku),
         name:             sanitizeInput(producto.name),
+        name_en:          sanitizeInput(producto.name_en || ''),
         description:      sanitizeInput(producto.description || ''),
         status:           'active',
         images:           (producto.images || []).slice(0, 10),

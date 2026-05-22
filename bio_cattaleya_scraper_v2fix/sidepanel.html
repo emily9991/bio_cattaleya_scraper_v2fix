@@ -576,28 +576,6 @@
     </div>
   </div>
 
-  <!-- OCR toggle -->
-  <div class="card">
-    <div class="card-hdr" id="hdrOcrToggle">
-      <span class="card-hdr-icon">🔍</span>
-      <span class="card-hdr-title">OCR precio Tmall</span>
-    </div>
-    <div class="card-body open" id="bodyOcrToggle">
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-label">Activar OCR automático</div>
-          <div class="toggle-sub">Lee el precio desde la imagen del producto</div>
-        </div>
-        <label class="sw">
-          <input type="checkbox" id="toggleOCR">
-          <span class="sw-track"></span>
-        </label>
-      </div>
-      <div class="notice n-amber" style="margin-top:8px;margin-bottom:0">
-        ⚠️ Requiere Tesseract.js — puede tomar hasta 6 min por producto
-      </div>
-    </div>
-  </div>
 
   <!-- Checklist de seguridad -->
   <div class="card">
@@ -711,13 +689,7 @@
           <button class="step-btn" id="btnMedia">Capturar</button>
         </li>
         <li class="step-item">
-          <div class="step-num" id="stepNum4">4</div>
-          <span class="step-lbl">Detectar paginación</span>
-          <span class="step-res" id="result4">—</span>
-          <button class="step-btn" id="btnPagination">Detectar</button>
-        </li>
-        <li class="step-item">
-          <div class="step-num" id="stepNumPD">5</div>
+          <div class="step-num" id="stepNumPD">4</div>
           <span class="step-lbl">Panel derecho — precio y variaciones</span>
           <span class="step-res" id="resultPD">—</span>
           <button class="step-btn" id="btnPanelDerecho">Leer</button>
@@ -815,49 +787,9 @@
 
       <!-- Tallas -->
       <div class="chips-section">
-        <div class="chips-lbl">Tallas</div>
+        <div class="chips-lbl">Tallas-Variaciones</div>
         <div class="chips-wrap" id="chipsWrapTallas">
           <span class="chip chip-empty">Sin datos — extrae primero</span>
-        </div>
-      </div>
-
-      <!-- Colores -->
-      <div class="chips-section">
-        <div class="chips-lbl">Colores</div>
-        <div class="chips-wrap" id="chipsWrapColores">
-          <span class="chip chip-empty">Sin datos</span>
-        </div>
-      </div>
-
-      <!-- Kits / Combinaciones -->
-      <div class="chips-section">
-        <div class="chips-lbl">Kits / Combinaciones</div>
-        <div class="chips-wrap" id="chipsWrapKits">
-          <span class="chip chip-empty">Sin datos</span>
-        </div>
-      </div>
-
-      <!-- Variantes con stock -->
-      <div style="margin-top:10px">
-        <div class="chips-lbl">Variantes con stock</div>
-        <div class="var-wrap">
-          <table class="var-table">
-            <thead>
-              <tr>
-                <th>Talla</th>
-                <th>Color</th>
-                <th>Stock</th>
-              </tr>
-            </thead>
-            <tbody id="variantesTableBody">
-              <tr>
-                <td colspan="3"
-                    style="text-align:center;color:var(--text-muted);font-size:10px;padding:10px 8px">
-                  Pendiente — scraper panel derecho Tmall (Bug #5)
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 

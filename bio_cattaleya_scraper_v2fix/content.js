@@ -532,6 +532,7 @@ function extraerImagenes() {
 // FIX #31: URL parsing real, no substring
 function limpiarUrlImagen(src) {
   if (!src) return "";
+  if (src.startsWith('//')) src = 'https:' + src;
   try {
     var parsed = new URL(src);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
