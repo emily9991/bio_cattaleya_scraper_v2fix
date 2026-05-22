@@ -16,6 +16,8 @@
   "host_permissions": [
     "*://*.taobao.com/*",
     "*://*.tmall.com/*",
+    "*://*.tmall.hk/*",
+    "*://*.hk.tmall.com/*",
     "*://*.1688.com/*",
     "*://*.world.tmall.com/*",
     "https://api.notion.com/*",
@@ -37,6 +39,8 @@
       "matches": [
         "*://*.taobao.com/*",
         "*://*.tmall.com/*",
+        "*://*.tmall.hk/*",
+        "*://*.hk.tmall.com/*",
         "*://*.1688.com/*",
         "*://*.world.tmall.com/*"
       ],
