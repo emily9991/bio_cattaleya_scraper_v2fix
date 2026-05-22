@@ -380,12 +380,12 @@ function extraerDatosBasicos() {
 
     // ── PRECIO ORIGINAL Y DESCUENTO ──────────────────────────
     var precioDescEl = document.querySelector('[class*="highlightPrice"] [class*="text"]');
-    var precioDesc   = precioDescEl ? precioDescEl.textContent.trim() : "";
+    var precioDescBasico   = precioDescEl ? precioDescEl.textContent.trim() : "";
 
     var precioOrigTexts = [...document.querySelectorAll('[class*="subPrice"] [class*="text"]')]
       .map(el => el.textContent.trim())
       .filter(t => t !== '￥' && t !== '' && /[\d.]/.test(t));
-    var precioOrig = precioOrigTexts[0] || "";
+    var precioOrigBasico = precioOrigTexts[0] || "";
 
     // ── VARIACIONES ──────────────────────────────────────────
     var variaciones = [...document.querySelectorAll('[class*="valueItemBig"]')].map(function(v) {
@@ -407,9 +407,9 @@ function extraerDatosBasicos() {
       descripcion:      descripcionBase,
       url:              window.location.href,
       // ── NUEVOS ──
-      precio_descuento: precioDesc,
-      precio_original:  precioOrig,
-      precio_cny:       precioOrig || precioDesc,
+      precio_descuento: precioDescBasico,
+      precio_original:  precioOrigBasico,
+      precio_cny:       precioOrigBasico || precioDescBasico,
       variaciones:      variaciones
     };
 
