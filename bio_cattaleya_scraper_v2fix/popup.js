@@ -292,17 +292,13 @@ if (!imagenesDesc.length) {
       setField('pvPrecioOrig',  res.data.precio_original  ? `¥ ${res.data.precio_original}`  : '—');
 
       // ── Llenar chips de variaciones ──
-      const variaciones = res.data.variaciones || [];
+      const variaciones = res.data.variations || [];
       const wrapTallas  = document.getElementById('chipsWrapTallas');
-      const wrapColores = document.getElementById('chipsWrapColores');
-      const wrapKits    = document.getElementById('chipsWrapKits');
 
       if (variaciones.length && wrapTallas) {
         wrapTallas.innerHTML = variaciones.map(v =>
           `<span class="chip">${v.texto || v.vid}</span>`
         ).join('');
-        if (wrapColores) wrapColores.innerHTML = '<span class="chip chip-empty">Ver tallas</span>';
-        if (wrapKits)    wrapKits.innerHTML    = '<span class="chip chip-empty">Ver tallas</span>';
       }
     }
   });
@@ -1042,7 +1038,7 @@ function construirFila(datos) {
     'Nombre (EN)': nombreEN,
     'Descripcion': (datos.descripcion || '').replace(/[\n\r]+/g, ' ').slice(0, 400),
     'Specs': (datos.specs || []).join(' | '),
-    'Variaciones': (datos.variaciones || []).join(' | '),
+    'Tallas Variaciones': (datos.tallas_variaciones || []).join(' | '),
     'Costo CNY': datos.precio || '',
     'Costo USD': precioUSD,
     'Precio Venta USD': precioVenta,
@@ -1248,10 +1244,9 @@ document.getElementById('btnInsertSupabase')?.addEventListener('click', async ()
     exchangeRate:     4200,
     supplierCode:     document.getElementById('sbSupplierCode')?.value.trim() || 'SUP-0001',
     sourceUrl:        datos.url              || '',
-    variants:         datos.variaciones      || datos.variantes || [],
-    precio_original:  datos.precio_original  || '',
-    precio_descuento: datos.precio_descuento || '',
-    precio_cny:       datos.precio_cny       || datos.precio   || '',
+    variants:         datos.variations       || datos.variaciones || datos.variantes || [],
+    price_original_cny:  datos.price_original_cny  || '',
+    price_discount_cny:  datos.price_discount_cny  || '',
   };
 
   // Actualizar JSON preview
@@ -1293,9 +1288,9 @@ async function syncSbPreview() {
   setField('sbPrevName',     (datos.nombre || '').slice(0, 80));
   setField('sbPrevPrice',    datos.precio  ? `¥ ${datos.precio}` : '—');
   setField('sbPrevImages',   `${(datos.imagenes || []).length} imágenes capturadas`);
-  setField('sbPrevVariants', (datos.variantes || []).length
-    ? `${datos.variantes.length} variantes`
-    : '(pendiente — Bug #5)');
+  setField('sbPrevVariants', (datos.variations || datos.variantes || []).length
+    ? `${(datos.variations || datos.variantes).length} variaciones`
+    : '(sin variaciones)');
 
   // JSON preview
   const jsonBox = document.getElementById('jsonPreviewContent');

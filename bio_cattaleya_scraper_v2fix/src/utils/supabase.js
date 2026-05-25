@@ -85,10 +85,10 @@ async function enviarProductoASupabase(producto) {
         description:      sanitizeInput(producto.description || ''),
         status:           'active',
         images:           (producto.images || []).slice(0, 10),
-        precio_original:  sanitizeInput(producto.precio_original  || ''),
-        precio_descuento: sanitizeInput(producto.precio_descuento || ''),
-        precio_cny:       sanitizeInput(producto.precio_cny       || ''),
-        variaciones:      producto.variants || []
+        price_original_cny:  sanitizeInput(producto.price_original_cny || ''),
+        price_discount_cny:  sanitizeInput(producto.price_discount_cny || ''),
+        variations:          producto.variants || [],
+        url_official_shop:   sanitizeInput(producto.sourceUrl || '')
       })
     });
     if (!r1.ok) {

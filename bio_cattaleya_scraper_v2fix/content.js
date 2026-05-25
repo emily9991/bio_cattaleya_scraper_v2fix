@@ -407,10 +407,9 @@ function extraerDatosBasicos() {
       descripcion:      descripcionBase,
       url:              window.location.href,
       // ── NUEVOS ──
-      precio_descuento: precioDescBasico,
-      precio_original:  precioOrigBasico,
-      precio_cny:       precioOrigBasico || precioDescBasico,
-      variaciones:      variaciones
+      price_discount_cny: precioDescBasico,
+      price_original_cny: precioOrigBasico,
+      variations:         variaciones
     };
 
     datosExtraidos = Object.assign({}, datosExtraidos, resultado);
@@ -455,21 +454,17 @@ function extraerPanelDerecho() {
       };
     });
 
-    datosExtraidos.precio_descuento = precioDesc;
-    datosExtraidos.precio_original  = precioOrig;
-    datosExtraidos.precio_cny       = precioOrig || precioDesc;
-    datosExtraidos.variaciones      = variaciones;
-    datosExtraidos.precio_original  = precioOrig;
-    datosExtraidos.precio_descuento = precioDesc;
+    datosExtraidos.price_discount_cny = precioDesc;
+    datosExtraidos.price_original_cny = precioOrig;
+    datosExtraidos.variations         = variaciones;
 
     return {
       status:  "ok",
       details: `precio ¥${precioDesc} (orig ¥${precioOrig}) · ${variaciones.length} variaciones`,
       data: {
-        precio_descuento: precioDesc,
-        precio_original:  precioOrig,
-        precio_cny:       precioOrig || precioDesc,
-        variaciones:      variaciones
+        variations:           datosExtraidos.variations         || [],
+        price_original_cny:   datosExtraidos.price_original_cny || '',
+        price_discount_cny:   datosExtraidos.price_discount_cny || '',
       }
     };
   } catch(e) {
@@ -1005,10 +1000,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, reply) {
         descripcion_ocr:      descOcr,
         datos_custom:         datosExtraidos.custom        || {},
         variantes:            datosExtraidos.variantes     || [],
-        variaciones:          datosExtraidos.variaciones   || [],
-        precio_original:      datosExtraidos.precio_original  || '',
-        precio_descuento:     datosExtraidos.precio_descuento || '',
-        precio_cny:           datosExtraidos.precio_cny       || '',
+        variations:           datosExtraidos.variations         || [],
+        price_original_cny:   datosExtraidos.price_original_cny || '',
+        price_discount_cny:   datosExtraidos.price_discount_cny || '',
         imagenesPorColor:     datosExtraidos.imagenesPorColor || {},
         imagenes_variantes:   datosExtraidos.imagenes_variantes || [],
         imagenes_galeria_notion: datosExtraidos.imagenes_galeria_notion || '',
