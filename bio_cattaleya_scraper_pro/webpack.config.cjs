@@ -60,7 +60,6 @@ module.exports = (env, argv) => {
       new CopyWebpackPlugin({
         patterns: [
           { from: 'src/config.js', to: 'config.js' },
-          { from: 'src/utils/secureStorage.js', to: 'secureStorage.js' },
           { from: 'src/utils/supabase.js', to: 'src/utils/supabase.js' },
           { from: 'manifest.json', to: 'manifest.json' },
           { from: 'popup.html', to: 'popup.html' },

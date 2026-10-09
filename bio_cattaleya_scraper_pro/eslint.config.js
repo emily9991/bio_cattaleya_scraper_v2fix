@@ -1,4 +1,4 @@
-﻿import js from "@eslint/js";
+import js from "@eslint/js";
 
 export default [
   js.configs.recommended,
@@ -19,8 +19,6 @@ export default [
         URL: "readonly",
         importScripts: "readonly",
         CONFIG: "readonly",
-        secureStorage: "readonly",
-        licenseValidationInterval: "writable",
         Blob: "readonly",
         CustomEvent: "readonly",
         FileReader: "readonly",
