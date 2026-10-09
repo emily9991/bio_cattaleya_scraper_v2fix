@@ -1,6 +1,3 @@
-Aquí está el README actualizado:
-
-```markdown
 # 🌺 Bio Cattaleya Scraper Pro v4.0
 
 Extensión Chrome profesional para scraping automatizado de productos en Tmall, Taobao, 1688 y Tmall HK — con OCR de caracteres chinos, extracción de precios y variaciones, y sincronización directa con Supabase, Make.com y Notion.
