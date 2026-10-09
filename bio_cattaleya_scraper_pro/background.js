@@ -3,141 +3,24 @@
 // ============================================================
 
 importScripts('config.js');
-importScripts('secureStorage.js');
 importScripts('src/utils/supabase.js');
 
-let licenseValidationInterval = null;
-let isValidationInProgress = false;
-
-chrome.runtime.onInstalled.addListener(async (details) => {
+chrome.runtime.onInstalled.addListener((details) => {
   console.log('Extension installed/updated:', details.reason);
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   }
-  chrome.alarms.create('CHECK_LICENSE', { delayInMinutes: 1, periodInMinutes: 60 });
-  await validateLicense();
 });
 
-chrome.runtime.onStartup.addListener(async () => {
+chrome.runtime.onStartup.addListener(() => {
   console.log('Extension started');
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   }
-  await validateLicense();
 });
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'CHECK_LICENSE') {
-    console.log('License validation alarm triggered');
-    await validateLicense();
-  }
-});
-
-async function validateLicense() {
-  if (isValidationInProgress) return;
-  isValidationInProgress = true;
-  try {
-    const licenseKey = await secureStorage.getSecure('licenseKey');
-    if (!licenseKey) { await setPremiumStatus(false); return; }
-    const token = await getOrRenewToken();
-    if (!token) { await setPremiumStatus(false); return; }
-    const response = await fetch(CONFIG.BACKEND_URL + '/api/license/validate-license', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ licenseKey, chromeRuntimeId: chrome.runtime.id, timestamp: Date.now() })
-    });
-    if (response.ok) {
-      const data = await response.json();
-      if (data.valid) {
-        await setPremiumStatus(true);
-        await secureStorage.saveSecure('licenseData', { validatedAt: data.validatedAt, expiresAt: data.expiresAt, features: data.features });
-      } else {
-        await setPremiumStatus(false);
-        await invalidateLicense();
-      }
-    } else if (response.status === 401 || response.status === 403) {
-      await setPremiumStatus(false);
-      await invalidateLicense();
-    }
-  } catch (error) {
-    console.log('Validation error:', error.message);
-  } finally {
-    isValidationInProgress = false;
-  }
-}
-
-async function getOrRenewToken() {
-  try {
-    const existingToken = await secureStorage.getSecure('jwtToken');
-    if (existingToken) {
-      const res = await fetch(CONFIG.BACKEND_URL + '/api/auth/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: existingToken })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.valid) return existingToken;
-      }
-    }
-    const tokenResponse = await fetch(CONFIG.BACKEND_URL + '/api/auth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chromeRuntimeId: chrome.runtime.id, timestamp: Date.now() })
-    });
-    if (tokenResponse.ok) {
-      const data = await tokenResponse.json();
-      if (data.success) { await secureStorage.saveSecure('jwtToken', data.token); return data.token; }
-    }
-    return null;
-  } catch (error) { console.log('Token error:', error.message); return null; }
-}
-
-async function setPremiumStatus(isPremium) {
-  try {
-    await chrome.storage.local.set({ isPremium });
-    chrome.runtime.sendMessage({ type: 'LICENSE_STATUS_CHANGED', isPremium }).catch(() => {});
-  } catch (error) { console.log('Error setting premium:', error.message); }
-}
-
-async function invalidateLicense() {
-  try {
-    await secureStorage.removeSecure('licenseKey');
-    await secureStorage.removeSecure('jwtToken');
-    await secureStorage.removeSecure('licenseData');
-    chrome.runtime.sendMessage({ type: 'LICENSE_INVALID', message: 'License has been invalidated' }).catch(() => {});
-  } catch (error) { console.log('Error invalidating license:', error.message); }
-}
-
-async function saveLicenseKey(licenseKey) {
-  try {
-    if (!licenseKey || licenseKey.trim().length === 0) throw new Error('License key cannot be empty');
-    await secureStorage.saveSecure('licenseKey', licenseKey.trim());
-    await validateLicense();
-    return { success: true };
-  } catch (error) { return { success: false, error: error.message }; }
-}
-
-async function getLicenseStatus() {
-  try {
-    const result = await chrome.storage.local.get('isPremium');
-    const licenseData = await secureStorage.getSecure('licenseData');
-    return { isPremium: result.isPremium || false, licenseData: licenseData || null };
-  } catch (error) { return { isPremium: false, licenseData: null }; }
-}
 
 // ─── MENSAJES PRINCIPALES ─────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-
-  if (message.action === 'save_license') {
-    saveLicenseKey(message.licenseKey).then(sendResponse);
-    return true;
-  }
-
-  if (message.action === 'get_license_status') {
-    getLicenseStatus().then(sendResponse);
-    return true;
-  }
 
   if (message.action === 'fetch_image_b64') {
     fetch(message.url)
@@ -167,13 +50,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ ok: true, downloadId });
       }
     });
-    return true;
-  }
-
-  if (message.action === 'validate_license_now') {
-    validateLicense()
-      .then(() => sendResponse({ success: true }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
@@ -278,10 +154,3 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
-
-if (process.env.NODE_ENV === 'development') {
-  globalThis.validateLicense = validateLicense;
-  globalThis.saveLicenseKey = saveLicenseKey;
-  globalThis.getLicenseStatus = getLicenseStatus;
-}
-
