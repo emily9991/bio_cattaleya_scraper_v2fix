@@ -138,4 +138,3 @@ git push
 Proyecto privado — Bio Cattaleya Skin. Todos los derechos reservados.
 ```
 
-Copia esto en tu `README.md`, haz commit y push. 😄
