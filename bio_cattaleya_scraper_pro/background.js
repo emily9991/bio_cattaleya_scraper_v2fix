@@ -190,11 +190,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'debug_log') {
-    fetch('http://localhost:5001/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message.entry)
-    }).catch(() => {});
+    // Debug logging deshabilitado en producción (viola CSP)
+    console.log('[Extension Debug]', message.entry);
     return false;
   }
 
@@ -249,18 +246,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'guardar_listado') {
-    fetch('http://localhost:5001/guardar-listado', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        slug: message.payload.slug,
-        fecha: message.payload.fecha,
-        items: message.payload.items
-      })
-    })
-    .then(response => response.json())
-    .then(data => sendResponse({ ok: data.ok, path: data.path }))
-    .catch(error => sendResponse({ ok: false, error: error.message }));
+    // DESHABILITADO: No se pueden hacer llamadas a localhost en Chrome Web Store
+    // Para enviar datos: usar Supabase, Firebase o un backend en la nube
+    console.warn('[Extension] guardar_listado deshabilitado en producción. Usa Supabase u otro servicio en la nube.');
+    sendResponse({ ok: false, error: 'Funcionalidad no disponible en versión publicada' });
     return true;
   }
   // ── SUPABASE INSERT ──────────────────────────────────────

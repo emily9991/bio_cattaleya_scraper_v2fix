@@ -21,16 +21,20 @@
     "*://*.1688.com/*",
     "*://*.world.tmall.com/*",
     "https://api.notion.com/*",
-    "https://localhost:5001/*",
-    "http://127.0.0.1:5001/*",
-    "http://localhost:5001/*",
     "https://*.cloudvideocdn.taobao.com/*",
     "https://*.supabase.co/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' data: blob: https://api.notion.com https://localhost:5001 http://127.0.0.1:5001 http://localhost:5001 https://img.alicdn.com https://cloud.video.taobao.com https://*.cloudvideocdn.taobao.com https://*.supabase.co;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' data: blob: https://api.notion.com https://img.alicdn.com https://cloud.video.taobao.com https://*.cloudvideocdn.taobao.com https://*.supabase.co;"
   },
-  "action": {},
+  "action": {
+    "default_title": "Bio Cattaleya Scraper Pro"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "side_panel": {
     "default_path": "sidepanel.html"
   },

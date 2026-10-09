@@ -1084,17 +1084,16 @@ async function exportarCSV(tabId) {
 }
 
 async function enviarPython(tabId) {
-  mostrarExportStatus('⏳ Enviando al receptor Python...', '');
+  mostrarExportStatus('⏳ Enviando datos...', '');
   const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
   if (!datos) return;
   try {
-    const res  = await fetch('http://localhost:5001/guardar-listado', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos)
-    });
-    const json = await res.json();
-    mostrarExportStatus('✅ ' + (json.message || 'Guardado'), 'success');
-  } catch {
-    mostrarExportStatus('❌ Servidor no responde. ¿Está corriendo node server.js?', 'error');
+    // NOTA: Esta funcionalidad requiere un backend en la nube (Supabase, Firebase, etc.)
+    // No se pueden hacer llamadas a localhost en Chrome Web Store
+    console.log('Datos listos para enviar:', datos);
+    mostrarExportStatus('⚠️ Configurar backend en la nube (Supabase/Firebase)', 'warning');
+  } catch (error) {
+    mostrarExportStatus('❌ Error al procesar datos', 'error');
   }
 }
 
@@ -1126,9 +1125,8 @@ async function accionCompleta(tabId) {
   await esperar(800);
   try {
     const datos = await enviarMensaje(tabId, { action: 'get_all_data' });
-    await fetch('http://localhost:5001/guardar-listado', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos)
-    });
+    // Backend deshabilitado: no se pueden hacer llamadas a localhost en producción
+    console.log('[Extension] Datos exportados:', datos);
   } catch {}
   if (btn) {
     btn.textContent     = '✅ ¡TODO EXPORTADO!';
@@ -1330,10 +1328,8 @@ function addSbLog(msg) {
 async function checkPython() {
   const statusEl = document.getElementById('pythonStatus');
   if (!statusEl) return;
-  try {
-    await fetch('http://localhost:5001/', { method: 'OPTIONS', signal: AbortSignal.timeout(2500) });
-    statusEl.className = 'python-status';
-  } catch {
-    statusEl.className = 'python-status offline';
-  }
+  // Health check deshabilitado: no se pueden hacer llamadas a localhost en producción
+  // En Chrome Web Store, siempre mostrar como offline
+  statusEl.className = 'python-status offline';
+  console.log('[Extension] Python server check deshabilitado en producción');
 }
