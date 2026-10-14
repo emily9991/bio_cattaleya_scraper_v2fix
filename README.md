@@ -17,7 +17,7 @@ Esta extensión lo reduce a **5 minutos o menos**: con un clic captura la inform
 
 1. **Referencia fiel, no copia final.** El texto original se guarda tal cual para conocer las instrucciones de uso reales y completas del producto. Es material de investigación interno.
 2. **Voz propia.** A partir de esa referencia reescribo las descripciones con la voz de Bio Cattaleya. 
-3. **Imágenes del catálogo oficial.** Trabajo con el permiso de los fabricantes para usar sus fotos. La extensión las guarda organizadas por producto, y luego las transformo con IA generativa para crear los visuales de la tienda.
+3. **Imágenes del catálogo oficial.** Trabajo con el permiso de los fabricantes para usar sus fotos. La extensión las guarda organizadas por producto, y luego las transformo con IA generativa para crear los visuales de la tienda.a
 
 **Resultado:** pasar de encontrar un producto a tenerlo investigado y listo para publicar en minutos, no en horas.
 
