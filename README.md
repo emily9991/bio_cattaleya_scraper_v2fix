@@ -1,140 +1,181 @@
-Aquí está el README actualizado:
+# 🌺 Bio Cattaleya Scraper Pro
 
-```markdown
-# 🌺 Bio Cattaleya Scraper Pro v4.0
+Extensión de Chrome (Manifest V3) para extraer productos de **Taobao, Tmall, Tmall HK y 1688** y enviarlos a una base de datos propia. Lee el texto chino de las imágenes con OCR, captura precios y variaciones, y guarda todo en **Supabase**. También puede enviar datos a **Notion**.
 
-Extensión Chrome profesional para scraping automatizado de productos en Tmall, Taobao, 1688 y Tmall HK — con OCR de caracteres chinos, extracción de precios y variaciones, y sincronización directa con Supabase, Make.com y Notion.
+Nació para resolver un problema real de operación: publicar en [Bio Cattaleya Skin](#) productos de proveedores chinos sin copiar datos a mano.
+
+> 📸 ![Sidepanel de Bio Cattaleya Scraper Pro mostrando la extracción de un producto](docs/images/sidepanel.png)
+---
+
+## 🎯 ¿Por qué existe?
+
+Antes de vender un producto nuevo hay que entenderlo a fondo: qué hace, qué no hace, cómo se usa y en qué orden de la rutina va. Hacer eso a mano (leer la ficha del fabricante, copiar la información y las imágenes, organizarlo todo) me tomaba **cerca de 5 horas por producto**.
+
+Esta extensión lo reduce a **5 minutos o menos**: con un clic captura la información completa de la página del producto (textos, instrucciones de uso, imágenes, precio y variaciones) y la envía a una base de datos en Supabase, lista para trabajarse.
+
+### Cómo se usa la información
+
+1. **Referencia fiel, no copia final.** El texto original se guarda tal cual para conocer las instrucciones de uso reales y completas del producto. Es material de investigación interno.
+2. **Voz propia.** A partir de esa referencia reescribo las descripciones con la voz de Bio Cattaleya. 
+3. **Imágenes del catálogo oficial.** Trabajo con el permiso de los fabricantes para usar sus fotos. La extensión las guarda organizadas por producto, y luego las transformo con IA generativa para crear los visuales de la tienda.
+
+**Resultado:** pasar de encontrar un producto a tenerlo investigado y listo para publicar en minutos, no en horas.
 
 ---
 
-## 📋 Descripción
+## ✨ Características
 
-Bio Cattaleya Scraper Pro extrae información completa de productos desde plataformas chinas de e-commerce. Combina scraping visual, OCR con Tesseract.js, lectura de panel derecho (precio + variaciones) y un pipeline automatizado hacia Supabase → Make.com → Notion (6 listas categorizadas).
-
----
-
-## 🚀 Características
-
-- **Scraping completo**: título, precio, imágenes, video, parámetros, descripción
-- **OCR chino**: lee imágenes gráficas de descripción con Tesseract.js v4
-- **Panel derecho independiente**: precio original + descuento + variaciones (hasta 218+)
-- **Detección automática de categoría**: asigna Notion list según palabras clave chinas
-- **Descarga ZIP organizada**: imágenes y video por producto
-- **Insert Supabase**: 4 tablas — products, pricing, product_suppliers, inventory
-- **Pipeline Make.com → Notion**: 6 listas — Cosmetics, Care, Fashion, Footwear, Handbag, Accessories
-- **Soporte multi-plataforma**: Tmall, Taobao, 1688, Tmall HK
+- **Extracción completa**: título, precio, imágenes, video, parámetros y descripción.
+- **OCR de chino**: lee texto dentro de imágenes con Tesseract.js (`chi_sim` + `eng`).
+- **Precios y variaciones**: precio original, precio con descuento y variaciones del producto.
+- **Multi-plataforma**: Taobao, Tmall, Tmall HK, 1688.
+- **Supabase**: inserta cada producto en 4 tablas (`products`, `pricing`, `product_suppliers`, `inventory`).
+- **Descargas**: imágenes y video en ZIP (JSZip).
+- **Exportación a Excel** (SheetJS).
+- **Sidepanel**: la interfaz principal vive en el panel lateral de Chrome.
 
 ---
 
-## 📁 Estructura del Proyecto
+## 🗂️ Estructura del repositorio
 
 ```
 bio_cattaleya_scraper_v2fix/
-├── manifest.json              # Configuración MV3
-├── content.js                 # Scraping, OCR, detección categoría
-├── background.js              # Descargas, Supabase insert
-├── popup.js                   # Lógica del sidepanel
-├── sidepanel.html             # Interfaz principal
-├── src/
-│   └── utils/
-│       └── supabase.js        # Insert a 4 tablas
-├── lib/                       # Tesseract workers + traineddata
-├── webpack.config.cjs         # Build config
-└── package.json
+├── bio_cattaleya_scraper_pro/     # Extensión de Chrome (código principal)
+│   ├── manifest.json              # Configuración MV3
+│   ├── content.js                 # Extracción y OCR en la página
+│   ├── background.js              # Service worker
+│   ├── popup.html / popup.js      # Interfaz y lógica
+│   ├── sidepanel.html             # Panel lateral
+│   ├── src/utils/supabase.js      # Cliente e inserts a Supabase
+│   ├── lib/                       # Tesseract (worker, core WASM, chi_sim, eng)
+│   ├── icons/
+│   ├── server/                    # Servidor Node/Express local (monitor, listados, Excel, logs)
+│   ├── webpack.config.cjs
+│   ├── eslint.config.js
+│   └── .env.example
+├── debug_server/                  # Servidor mínimo de logs para desarrollo
+├── scripts/setup_dev.sh           # Script de configuración del entorno
+├── data/                          # raw/, processed/, exports/
+├── docs/context/context_v4_3.md   # Documento de contexto del proyecto
+├── .github/                       # CI (ci.yml), CodeQL y Dependabot
+├── CHANGELOG.md
+└── SECURITY.md
 ```
 
 ---
 
 ## 🛠️ Instalación
 
-**1. Clonar el repositorio**
+**Requisitos:** Node.js y Chrome 114 o superior.
+
 ```bash
 git clone https://github.com/emily9991/bio_cattaleya_scraper_v2fix.git
-cd bio_cattaleya_scraper_v2fix
-```
+cd bio_cattaleya_scraper_v2fix/bio_cattaleya_scraper_pro
 
-**2. Instalar dependencias**
-```bash
+cp .env.example .env        # completa tus valores
 npm install
+
+npm run build:dev           # desarrollo
+npm run build:prod          # producción
 ```
 
-**3. Build**
-```bash
-npm run build:dev    # desarrollo
-npm run build        # producción
-```
+**Cargar en Chrome**
 
-**4. Cargar en Chrome**
-- Ir a `chrome://extensions/`
-- Activar "Modo desarrollador"
-- "Cargar sin empaquetar" → seleccionar carpeta `dist/`
+1. Abre `chrome://extensions/` y activa el **Modo desarrollador**.
+2. Pulsa **Cargar descomprimida** y selecciona la carpeta `bio_cattaleya_scraper_pro/dist/`.
 
 ---
 
 ## ⚙️ Configuración
 
-En el sidepanel → pestaña **Config**:
+### Extensión
+
+En el sidepanel, pestaña **Config**, ingresa:
 
 | Campo | Descripción |
 |-------|-------------|
-| Supabase URL | URL del proyecto Supabase |
-| Anon Key | Clave pública de Supabase |
+| Supabase URL | URL de tu proyecto |
+| Anon Key | Clave pública (`anon`); nunca uses `service_role` en el cliente |
 
-Las keys se guardan en `chrome.storage.local` — nunca en código fuente.
+Las claves se guardan en `chrome.storage.local`, no en el código fuente.
+
+### Variables de entorno (`.env`)
+
+Copia `.env.example` a `.env`. Incluye las credenciales de Notion (`NOTION_TOKEN`, `NOTION_DATABASE_ID`), los nombres de las propiedades de tu base y las URLs del backend local. **Nunca subas tu `.env` al repositorio.**
+
+---
+
+## 🖥️ Servidores locales (opcional)
+
+**Servidor principal** (monitor, guardado de listados y exportación a Excel):
+
+```bash
+cd bio_cattaleya_scraper_pro/server
+cp .env.example .env
+npm install
+npm start                   # http://localhost:5001
+```
+
+**Servidor de debug** (solo recibe y muestra logs):
+
+```bash
+cd debug_server
+npm install
+node server.js              # http://localhost:5001
+```
+
+> ⚠️ Ambos usan el puerto 5001 por defecto. Para correrlos a la vez, cambia `PORT` en el `.env` del servidor principal.
 
 ---
 
 ## 🔄 Flujo de uso
 
-1. Abrir producto en Tmall/Taobao/1688/Tmall HK
-2. Abrir sidepanel de la extensión
-3. Ejecutar pasos en orden:
-   - **Paso 0** — OCR descripción (imágenes gráficas)
-   - **Paso 1** — Scroll cargar imágenes
-   - **Paso 2** — Datos del producto
-   - **Paso 3** — Imágenes y video
-   - **Paso 4** — Panel derecho (precio + variaciones)
-4. Revisar preview y guardar en Supabase
-5. Make.com detecta el insert → crea item en Notion según categoría
+1. Abre un producto en Taobao, Tmall, Tmall HK o 1688.
+2. Abre el sidepanel de la extensión.
+3. Ejecuta la extracción por pasos: OCR de la descripción, carga de imágenes, datos del producto, imágenes y video, precio y variaciones.
+4. Revisa la vista previa.
+5. Guarda en Supabase.
 
 ---
 
-## 🗄️ Supabase — Tablas
+## 🗄️ Modelo de datos (Supabase)
+
+El producto se inserta en secuencia en 4 tablas:
 
 | Tabla | Campos clave |
-|-------|-------------|
-| `products` | sku, name, name_en, description, images, price_original_cny, price_discount_cny, variations, notion_list |
+|-------|--------------|
+| `products` | sku, name, name_en, description, status, images, price_original_cny, price_discount_cny, variations |
 | `pricing` | cost_usd, price_cop, exchange_rate |
 | `product_suppliers` | supplier_id, source_url |
 | `inventory` | color, size, stock (una fila por variación) |
 
----
-
-## 🎯 Categorías Notion (detección automática)
-
-| Lista | Palabras clave detectadas |
-|-------|--------------------------|
-| Cosmetics List | 霜, 面膜, 精华, 防晒, 口红, 眼影, 香水... |
-| Care List | 洗发, 护发, 沐浴, 洁面, 卸妆... |
-| Fashion List | 裙, 外套, 裤, 连衣裙, 睡衣... |
-| Footwear List | 鞋, 靴, 凉鞋, 运动鞋... |
-| Handbag List | 包, 钱包, 背包, 行李箱... |
-| Accessories List | 项链, 耳环, 手链, 手表... |
+Los inserts usan `on_conflict=sku` para no duplicar productos, y los textos se sanitizan antes de enviarse.
 
 ---
 
-## 🔄 Flujo de trabajo Git
+## 🔐 Seguridad
 
-```bash
-git add .
-git commit -m "feat: descripción del cambio"
-git push
-```
+- Claves fuera del código y en `chrome.storage.local`.
+- Sanitización de todo texto extraído antes de insertarlo.
+- Análisis automático con CodeQL y actualizaciones con Dependabot.
+- Para reportar una vulnerabilidad, mira [SECURITY.md](./SECURITY.md).
+
+---
+
+## 🧰 Stack
+
+JavaScript (ES6+) · Chrome Extension MV3 · Webpack + Babel · Tesseract.js · Supabase · Node.js / Express · Notion API · GitHub Actions
+
+---
+
+## 👩‍💻 Autoría
+
+Diseñado y desarrollado por **Emily Tatiana Rojas Leiva** ([@emily9991](https://github.com/emily9991)) para la operación de Bio Cattaleya Skin: arquitectura de la extensión, OCR, integración con Supabase y Notion, servidores locales y pipeline de CI.
 
 ---
 
 ## 📄 Licencia
 
-Proyecto privado — Bio Cattaleya Skin. Todos los derechos reservados.
+© 2026 Emily Tatiana Rojas Leiva. Todos los derechos reservados.
 
-
+El código se publica para consulta y como muestra de mi trabajo. No se permite copiarlo, modificarlo ni redistribuirlo sin autorización por escrito.
